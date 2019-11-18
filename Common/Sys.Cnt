@@ -1,0 +1,2305 @@
+Function Activar_RTS(Puerto: String; Espera: Cardinal): String;
+var
+  hPort: THandle;
+  DCB: TDCB;
+begin
+  Result:= '';
+  Puerto:= Uppercase(Puerto);
+  // Cambiar esto si es necesario un puerto diferente
+//  if (Puerto<>'COM1') and (Puerto<>'COM2') then
+//    exit;
+  hPort:= CreateFile(PChar('\\.\'+Puerto), GENERIC_READ or GENERIC_WRITE,0, nil,
+    OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,0);
+  if hPort<>INVALID_HANDLE_VALUE then
+  begin
+    DCB.DCBlength:= sizeof(DCB);
+    if GetCommState(hPort,DCB) then
+    begin
+      with DCB do
+      begin
+        BaudRate := CBR_9600;
+        ByteSize := 8;
+        Parity   := NOPARITY;
+        StopBits := ONESTOPBIT;
+        Flags    := $01;
+      end;
+      if SetCommState(hPort, DCB) then
+      begin
+        EscapeCommFunction(hPort,SETRTS);
+        Sleep(Espera);
+        EscapeCommFunction(hPort,CLRRTS);
+      end;
+    end;
+    CloseHandle(hPort);
+  end;
+end;
+
+Function DuplicateRecord (Source, Destination : TClientDataset; Const AppendNew : Boolean) : Integer;
+   Var
+     C,I : Integer;
+   Begin
+     C := 0;
+     If (Destination.RecordCount > 0) And Not(AppendNew) Then Destination.Edit;
+     If (Destination.RecordCount = 0) Or AppendNew Then Destination.Insert;
+     
+     For I := 0 To Destination.FieldCount - 1 Do
+       If Destination.FieldByName(Destination.Fields.Fields[I].FieldName).FieldKind = fkData Then
+         Begin
+           Inc(C);
+           Destination.FieldByName(Destination.Fields.Fields[I].FieldName).Value := Source.FieldByName(Destination.Fields.Fields[I].FieldName).Value;
+         End;
+     Result := C;
+   End;
+
+  Function TrimLeadingZeros(const S: string): string;
+    var
+      I, L: Integer;
+    begin
+      L:= Length(S);
+      I:= 1;
+      while (I < L) and (S[I] = '0') do Inc(I);
+      Result:= Copy(S, I);
+    end;
+
+procedure SetPcVolume(aVolume,aIndex:Byte);
+  var Vol: TVolumeRec;
+begin
+   Vol.LeftVolume := aVolume shl 8;
+   Vol.RightVolume:= Vol.LeftVolume;
+   auxSetVolume(UINT(aIndex), Vol.LongVolume) ;
+end;
+
+
+Function GetPcVolume(aIndex:Byte):Cardinal;
+  var Vol: TVolumeRec;
+begin
+   AuxGetVolume(UINT(aIndex),@Vol.LongVolume) ;
+   Result:=(Vol.LeftVolume + Vol.RightVolume) shr 9;
+end;
+
+Procedure PlaySound(Const FileName :String);
+  Begin
+    sndPlaySound(pAnsiChar(FileName), SND_ASYNC);
+  End;
+
+Function DoSearch(Aowner: TComponent;
+                    Const TableName,
+                          Provider,
+                          KeyField,
+                          InitialField,
+                          AltQry: String;
+                    Const RemServer: tCustomRemoteServer;
+                    Const InitialOrder: Char;
+                    Const PcktRecords: SmallInt;
+                    Const WState: TWindowState;
+                    Var WndResult: Integer;
+                    Const GrdMode : Boolean =  False): Variant;
+  Var
+      F : TDlgSearch;
+  begin
+      F := nil;
+      Try
+        F := TDlgSearch.Create(Aowner,
+                               TableName,    (* TableName *)
+                               Provider,     (* Provider *)
+                               InitialField, (* CampoInicial *)
+                               AltQry,       (* AltQry *)
+                               RemServer,    (* RemoteServer *)
+                               InitialOrder, (* SortOrder *)
+                               PcktRecords,  (* Packet Records *)
+                               WState,
+                               GrdMode);
+                               F. ShowModal;
+        WndResult := F.ModalResult;
+        If F.SrchCds.RecordCount > 0 Then
+          Result := F.SrchCds.FieldByName(KeyField).Value;
+      Finally
+         F.SrchCds.Close;
+         F.Free
+      End
+  end;
+
+Procedure ListDbs(TheModule : TDataModule; List, MAP : TStrings) ;
+  Var
+    I : Integer;
+  begin
+    For I := 0 To TheModule.ComponentCount - 1 Do
+      Begin
+        If (TheModule.Components[I] Is TClientDataSet) Then
+        Begin
+          List.Add((TheModule.Components[I] As TClientDataSet).Name);
+          MAP.Add(TheModule.Name)
+        End;
+
+        If (TheModule.Components[I] Is TTable) Then
+        Begin
+          List.Add((TheModule.Components[I] As TTable).Name);
+          MAP.Add(TheModule.Name)
+        End
+      End;
+  end;
+
+  Function IsCPUID_Available : Boolean; register;
+    asm
+      PUSHFD              {direct access to flags no possible, only via stack}
+      POP     EAX         {flags to EAX}
+      MOV     EDX,EAX     {save current flags}
+      XOR     EAX,ID_BIT  {not ID bit}
+      PUSH    EAX         {onto stack}
+      POPFD               {from stack to flags, with not ID bit}
+      PUSHFD              {back to stack}
+      POP     EAX         {get back to EAX}
+      XOR     EAX,EDX     {check if ID bit affected}
+      JZ      @exit       {no, CPUID not availavle}
+      MOV     AL,True     {Result=True}
+      @exit:
+    end;
+
+  Function GetCPUID : TCPUID; assembler; register;
+    asm
+      PUSH    EBX         {Save affected register}
+      PUSH    EDI
+      MOV     EDI,EAX     {@Resukt}
+      MOV     EAX,1
+      DW      $A20F       {CPUID Command}
+      STOSD               {CPUID[1]}
+      MOV     EAX,EBX
+      STOSD               {CPUID[2]}
+      MOV     EAX,ECX
+      STOSD               {CPUID[3]}
+      MOV     EAX,EDX
+      STOSD               {CPUID[4]}
+      POP     EDI         {Restore registers}
+      POP     EBX
+    end;
+
+  Function GetCPUVendor : TVendor; assembler; register;
+    asm
+      PUSH    EBX              {Save affected register}
+      PUSH    EDI
+      MOV     EDI,EAX          {@Result (TVendor)}
+      MOV     EAX,0
+      DW      $A20F            {CPUID Command}
+      MOV     EAX,EBX
+      XCHG          EBX,ECX    {save ECX result}
+      MOV               ECX,4
+      @1:
+          STOSB
+          SHR     EAX,8
+          LOOP    @1
+          MOV     EAX,EDX
+          MOV     ECX,4
+      @2:
+          STOSB
+          SHR     EAX,8
+          LOOP    @2
+          MOV     EAX,EBX
+          MOV     ECX,4
+      @3:
+          STOSB
+          SHR     EAX,8
+          LOOP    @3
+          POP     EDI          {Restore registers}
+          POP     EBX
+    end;
+
+  Function GetAdapterInfo(Lana: AnsiChar): String;
+    var
+       Adapter : TAdapterStatus;
+       NCB     : TNCB;
+    Begin
+      FillChar(NCB, SizeOf(NCB), 0);
+      NCB.ncb_command := Char(NCBRESET);
+      NCB.ncb_lana_num := Lana;
+      If Netbios(@NCB) <> Char(NRC_GOODRET) Then
+        Begin
+          Result := '00-??-00-??-00';
+          Exit;
+        End;
+
+      FillChar(NCB, SizeOf(NCB), 0);
+      NCB.ncb_command := Char(NCBASTAT);
+      NCB.ncb_lana_num := Lana;
+      NCB.ncb_callname := '*';
+
+      FillChar(Adapter, SizeOf(Adapter), 0);
+      NCB.ncb_buffer := @Adapter;
+      NCB.ncb_length := SizeOf(Adapter);
+      If Netbios(@NCB) <> Char(NRC_GOODRET) Then
+        Begin
+          Result := '00-??-00-??-00';
+          Exit;
+        End;
+      Result :=   IntToHex(Byte(Adapter.adapter_address[0]), 2) + '-' +
+                  IntToHex(Byte(Adapter.adapter_address[1]), 2) + '-' +
+                  IntToHex(Byte(Adapter.adapter_address[2]), 2) + '-' +
+                  IntToHex(Byte(Adapter.adapter_address[3]), 2) + '-' +
+                  IntToHex(Byte(Adapter.adapter_address[4]), 2) + '-' +
+                  IntToHex(Byte(Adapter.adapter_address[5]), 2)
+    End;
+
+  Function GetMACAddress: string;
+    Var
+      AdapterList : TLanaEnum;
+      NCB         : TNCB;
+    Begin
+      FillChar(NCB, SizeOf(NCB), 0);
+      NCB.ncb_command := Char(NCBENUM);
+      NCB.ncb_buffer := @AdapterList;
+      NCB.ncb_length := SizeOf(AdapterList);
+      Netbios(@NCB);
+      If Byte(AdapterList.length) > 0 Then
+        Result := GetAdapterInfo(AdapterList.lana[0])
+      Else
+        Result := '00-??-00-??-00';
+    End;
+
+  Function GenCPUID : String;
+    Var
+      CPUID : TCPUID;
+      I     : Integer;
+    Begin
+      For I := Low(CPUID) To High(CPUID) Do CPUID[I] := -1;
+      If IsCPUID_Available Then
+        Begin
+          CPUID  := GetCPUID;
+          Result := IntToHex(CPUID[1],8) + '-' +
+                    IntToHex(CPUID[2],8) + '-' +
+                    IntToHex(CPUID[3],8) + '-' +
+                    IntToHex(CPUID[4],8)
+        End
+      Else
+        Result := 'N/A IAP';
+    End;
+
+  Function CountChar(Const SubStr : Char; S : String): Integer;
+    Var
+      I,L    ,
+      Holder : Integer;
+    Begin
+      L := Length(S);
+      Holder := 0;
+      For I := 1 To L Do
+        If S[I] = SubStr Then Inc (Holder);
+      Result := Holder;
+    End;
+
+  Function TrimChar(Const SubStr : Char; S : String): String;
+    Var
+      I,L    : Integer;
+      NewStr : String;
+    Begin
+      NewStr := '';
+      L := Length(S);
+      For I := 1 To L Do
+        If S[I] <> SubStr Then NewStr := NewStr + S[I];
+      Result := NewStr
+    End;
+
+  Function NextCommercialDate (Const InitDate : TDate; Const Time_Period : SmallInt) : tDate;
+    Var
+       D,M,Y   : Word;
+    Begin
+      DecodeDate (InitDate,Y,M,D);
+      Case Time_Period Of
+        _tp_Weekly : Begin
+                        Result := EndOfWeek(InitDate);
+                        If Result = InitDate Then Result := EndOfWeek(InitDate + 1);
+                        Exit
+                      End;
+
+        _tp_Biweekly : Begin
+                         If (D >= 28) Then
+                           Begin
+                             D := 15;
+                             M := M + 1;
+                             If M > 12 Then
+                               Begin
+                                 M := 1;
+                                 Inc (Y)
+                               End;
+                           End
+                         Else If D >= 15 Then D := 30
+                         Else If (D < 15) Then D := 15
+                       End; {_tp_Biweekly}
+
+        _tp_Monthly : Begin
+                        If D >= 28 Then Inc (M);
+                        If M > 12 Then
+                          Begin
+                            M := 1;
+                            Inc (Y)
+                          End;
+                        D := 30
+                      End;
+
+        Else Begin
+               Result := AddDays(InitDate,Time_Period);
+               Exit
+             End
+      End; {Case}
+
+      If (D = 30) And (M = 2) Then D := 28;
+
+      Result := EncodeDate(Y,M,D);
+    End;
+
+  Function NumToAlpha(Number: Int64): String;
+    Const
+      Unidades : Array [1..10] Of ShortString = ('Uno' , 'Dos'   , 'Tres'   , 'Cuatro'  , 'Cinco'    , 'Seis'     , 'Siete'     , 'Ocho'     , 'Nueve'     , 'Diez');
+      Decenas  : Array [1..9]  Of ShortString = ('Diez', 'Veinte', 'Treinta', 'Cuarenta', 'Cincuenta', 'Sesenta'  , 'Setenta'   , 'Ochenta'  , 'Noventa'   );
+      Teens    : Array [1..9]  Of ShortString = ('Once', 'Doce'  , 'Trece'  , 'Catorce' , 'Quince'   , 'Dieciseis', 'Diecisiete', 'Dieciocho', 'Diecinueve');
+    Var
+      Holder : String;
+    Begin
+      Holder := '';
+      While Number > 0 Do
+      Begin
+         Case Number Of
+          1..10 : Begin
+                   Holder := Holder + Unidades[Number];
+                   Number := 0;
+                  End;
+         11..19 : Begin
+                   Holder := Holder + Teens[Number-10];
+                   Number := 0;
+                  End;
+         20..99 : Begin
+                   Holder := Holder + Decenas[Number Div 10];
+                   Dec(Number,(Number Div 10)* 10);
+                   If Number > 0 Then Holder := Holder + ' y '
+                  End;
+       100..999 : Begin
+                   Case ((Number Div 100)* 100) Of
+                      100 : Begin
+                             If Number - ((Number Div 100)* 100) > 0 Then
+                                Holder := Holder + 'Ciento '
+                             Else
+                                Holder := Holder + 'Cien '
+                            End;
+                      500 : Holder := Holder + 'Quinientos ';
+                      700 : Holder := Holder + 'Setecientos ';
+                      900 : Holder := Holder + 'Novecientos ';
+                      Else
+                            Holder := Holder + Unidades[Number Div 100]+'cientos ';
+                   End;
+                      Dec(Number,(Number Div 100)* 100)
+                  End;
+   1000..999999 : Begin
+                     If Number < 2000 Then Holder := Holder + 'Mil '
+                     Else
+                        Holder := Holder + NumToAlpha(Number Div 1000) + ' Mil ';
+                     Dec(Number,(Number Div 1000)* 1000)
+                  End;
+1000000..999999999
+                : Begin
+                     If Number < 2000000 Then Holder := Holder + 'Millón '
+                     Else
+                        Holder := Holder + NumToAlpha(Number Div 1000000) + ' Millones ';
+                     Dec(Number,(Number Div 1000000)* 1000000)
+                   End;
+         Else Begin Holder := 'fuera de limites'; break End
+
+        End
+      End;
+      If Length(Holder) <= 0 Then Holder := '00';
+      Result := Holder
+    End;
+
+  Function RealNumToAlpha(Number: Real): String;
+    Var
+      DecPart ,
+      IntPart : String;
+    Begin
+      IntPart := NumToAlpha(Trunc(Number));
+      DecPart := IntToStr(Round(Frac(Number)*100));
+      Result := IntPart + ' Pesos con ' + DecPart + '/100'
+    End;
+
+  Function PesosToUS;
+    Begin
+      Result := Pesos / Prima;
+    End;
+
+  Function USToPesos;
+    Begin
+      Result := US * Prima;
+    End;
+
+  Function Encrypt(S : String): String;
+    Var
+      TmpInt,
+      Num,
+      I,L    : Integer;
+      NewS   : String;
+    Begin
+      If Trim(S) = '' Then Exit;
+      L := Length(S);
+      Randomize;
+      Num := Random(50);
+      If Num <= 0 Then Num := _Factor;
+      NewS  := IntToStr((L + Num) * L);
+      For I := L DownTo 1 Do
+        Begin
+          If I Mod 2 = 0 Then TmpInt := ((Ord(S[I]) + Num) * L) - I
+          Else TmpInt := ((Ord(S[I]) + I) * Num) - L;
+          NewS := NewS + _Separator + IntToStr(TmpInt);
+        End;
+      Result := NewS;
+    end;
+
+  Function UnEncrypt(Const S : String): String;
+    Var
+      TmpInt,
+      Num,
+      I,_Size,H : Integer;
+      SubStr    ,
+      TmpStr    ,
+      NewS      : String;
+
+    Begin
+      If Trim(S) = '' Then Exit;
+      TmpStr := S;
+      SubStr := '';
+      _Size := CountChar(_Separator,TmpStr);
+      I := _Size;
+      H := Pos (_Separator,TmpStr);
+      SubStr := Copy (TmpStr,1,H-1);
+      Delete (TmpStr,1,H);
+      Num := StrToInt(SubStr);
+      Num := Num Div _Size;
+      Num := Num - _Size;
+      While Length(TmpStr) > 0 Do
+        Begin;
+          H := Pos (_Separator,TmpStr);
+          If H > 0 Then  SubStr := Copy (TmpStr,1,H-1)
+          Else
+            Begin
+              SubStr := TmpStr;
+              TmpStr := '';
+            End;
+
+          TmpInt := StrToInt (SubStr);
+
+          If I Mod 2 = 0 Then
+            Begin
+              TmpInt := TmpInt + I;
+              TmpInt := TmpInt Div _Size;
+              TmpInt := TmpInt - Num;
+            End
+          Else
+            Begin
+              TmpInt := TmpInt + _Size;
+              TmpInt := TmpInt Div Num;
+              TmpInt := TmpInt - I;
+            End;
+          Delete (TmpStr,1,H);
+          NewS := Char(TmpInt) + NewS;
+          Dec(I);
+        End; {While}
+      Result := NewS;
+    end;
+
+  Function SimpleEncrypt(S : String): String;
+    Var
+      I      : Integer;
+      NewS   : String;
+    Begin
+      NewS  := '';
+      For I := Length(S) DownTo 1 Do
+        NewS := Chr(Ord(S[I])+(I*10)) + NewS;
+      Result := NewS;
+    end;
+
+  Function SimpleUnEncrypt(S : String): String;
+    Var
+      I      : Integer;
+      NewS   : String;
+    Begin
+      NewS  := '';
+      For I := Length(S) DownTo 1 Do
+        NewS := Chr(Ord(S[I])-(I*10)) + NewS;
+      Result := NewS;
+    end;
+{Procedimientos}
+  Procedure Log (Const LogName,LogSection,LogKey,LogValue : String);
+    Var
+      LogFile : TInifile;
+    Begin
+      LogFile := TInifile.Create(LogName);
+      LogFile.WriteString(LogSection,LogKey,LogValue);
+      LogFile.UpdateFile;
+      LogFile.Free
+    End;
+
+  Function OpenForm(InstanceClass: tComponentClass; var Reference) : Integer;
+    Var
+      FC : TFormClass;
+      F : TForm;
+   Begin
+     Try
+      FC := TFormClass(InstanceClass);
+      F := Fc.Create(Nil);
+      F.ShowModal;
+      Result := F.ModalResult;
+     Finally
+       F.Free()
+     End
+   End;
+
+
+Function Pad(Kind:Char;Const S:String; N:Byte; Character : Char):String;
+  Var
+    I ,
+    K : Byte;
+  Begin
+    Result := S;
+    Result := Trim(Result);
+    Result := Copy(Result,1,N);
+    Case Kind Of
+      'L': While Length(Result) < N Do
+           Result := Character + Result;
+
+      'R': While Length(Result) < N Do
+           Result := Result + Character;
+
+      'C': Begin
+             K := N - Length(Result);
+
+             If K <= 0 Then
+               Exit;
+
+             For I := 1 To K Div 2 Do
+               Result := Character + Result;
+
+             For I := 1 To (K Div 2) + (K Mod 2) Do
+               Result := Result + Character;
+           End;
+    End; {Case}
+  End;
+
+
+Procedure Mensaje (S : String; Owner : TComponent);
+  Begin
+    AdvMessage(Application.Title,
+               S,
+               '',
+               tiInformation,
+               Owner);
+//    Application.MessageBox(PChar(S),PChar(Application.Title),MB_OK + MB_IconInformation)
+  End;
+
+Function Ask (Const Question,Title : String) : Integer;
+  Begin
+    Result :=  Application.MessageBox(PChar(Question),
+                                      PChar(Title),
+                                      MB_YESNO + MB_ICONQUESTION)
+  End;
+
+Procedure AddForm2Levels(InstanceClass: tComponentClass; Var Reference; Create : Boolean);
+  Begin
+  End;
+
+Procedure CheckOptions(Sender: TObject; Nivel : String);
+  Begin
+  End;
+
+Function ValSerial : Boolean;
+  Var
+    RegInf     : TRegistry;
+    _Values    ,
+    _Dir       ,
+    _FName     : String;
+
+  Begin
+    Result := False;
+    RegInf := TRegistry.Create;
+    Try
+      {Inicia El Registro}
+//      RegInf.RootKey := HKEY_LOCAL_MACHINE;
+      _Dir := Chr($66)+Chr($67)+Chr($6D)+Chr($6E)+Chr($86)+Chr($93)+Chr($87)+
+              Chr($A2)+Chr($9F)+Chr($C0)+Chr($BB)+Chr($E1)+Chr($E5)+Chr($FE)+
+              Chr($5)+Chr($13)+Chr($19)+Chr($1A)+Chr($32)+Chr($24)+Chr($29)+
+              Chr($45)+Chr($54)+Chr($54)+Chr($69)+Chr($7B)+Chr($81)+Chr($74)+
+              Chr($65)+Chr($A1)+Chr($A8)+Chr($B2)+Chr($AF)+Chr($C2)+Chr($D2)+
+              Chr($BE)+Chr($D7)+Chr($EE)+Chr($F9)+Chr($F9)+Chr($9)+Chr($12);
+      _Dir := SimpleUnEncrypt(_Dir);
+      _FName := SimpleUnEncrypt(Chr($5D)+Chr($88)+Chr($7F)+Chr($9A)+Chr($A6)+Chr($91)+Chr($B6)+Chr($99)+Chr($C8)+Chr($CA)+Chr($DD));
+      RegInf.OpenKey(_Dir,True);
+
+      _Values := RegInf.ReadString(_FName);
+      _Values := SimpleUnEncrypt(_Values);
+      If  _Values = '' Then Exit;
+
+      _FName := GetCurrentDir();
+      Result := (_Values = GetVolumeID(_FName[1]))
+    Finally
+      RegInf.Free
+    End {Try}
+  End;
+
+Function IsDemo: Boolean;
+  Const
+    _ISRegistered : String = Chr($5C)+Chr($59)+Chr($65)+Chr($71)+Chr($85)+Chr($90)+Chr($8B)+Chr($A2)+Chr($9F)+Chr($A8);
+
+  Var
+    RegInf     : TRegistry;
+    _Values    ,
+    _Dir       ,
+    _FName     : String;
+
+  Begin
+    Result := True;
+    RegInf := TRegistry.Create;
+    Try
+      {Inicia El Registro}
+//      RegInf.RootKey := HKEY_LOCAL_MACHINE;
+      _Dir := Chr($66)+Chr($67)+Chr($6D)+Chr($6E)+Chr($86)+Chr($93)+Chr($87)+
+              Chr($A2)+Chr($9F)+Chr($C0)+Chr($BB)+Chr($E1)+Chr($E5)+Chr($FE)+
+              Chr($5)+Chr($13)+Chr($19)+Chr($1A)+Chr($32)+Chr($24)+Chr($29)+
+              Chr($45)+Chr($54)+Chr($54)+Chr($69)+Chr($7B)+Chr($81)+Chr($74)+
+              Chr($65)+Chr($A1)+Chr($A8)+Chr($B2)+Chr($AF)+Chr($C2)+Chr($D2)+
+              Chr($BE)+Chr($D7)+Chr($EE)+Chr($F9)+Chr($F9)+Chr($9)+Chr($12);
+      _Dir := SimpleUnEncrypt(_Dir);
+      _FName := SimpleUnEncrypt(Chr($57)+Chr($83)+Chr($82)+Chr($89)+Chr($9E)+Chr($85)+Chr($8A)+Chr($A6)+Chr($BB)+Chr($D0)+Chr($E3)+Chr($DD));
+      RegInf.OpenKey(_Dir,True);
+      _Values := RegInf.ReadString(_FName);
+      _Values := SimpleUnEncrypt(_Values);
+      If  _Values = '' Then Exit;
+
+      Result := (_Values <> SimpleUnEncrypt(_ISRegistered))
+    Finally
+      RegInf.Free
+    End {Try}
+  End;
+
+Procedure MakeDemoExp(Days : Byte);
+  Var
+    RegInf    : TRegistry;
+    _Values    ,
+    _Dir       ,
+    _FName     : String;
+
+  Begin
+    RegInf := TRegistry.Create;
+    {Inicia El Registro}
+//    RegInf.RootKey := HKEY_LOCAL_MACHINE;
+    _Dir := Chr($66)+Chr($67)+Chr($6D)+Chr($6E)+Chr($86)+Chr($93)+Chr($87)+
+            Chr($A2)+Chr($9F)+Chr($C0)+Chr($BB)+Chr($E1)+Chr($E5)+Chr($FE)+
+            Chr($5)+Chr($13)+Chr($19)+Chr($1A)+Chr($32)+Chr($24)+Chr($29)+
+            Chr($45)+Chr($54)+Chr($54)+Chr($69)+Chr($7B)+Chr($81)+Chr($74)+
+            Chr($65)+Chr($A1)+Chr($A8)+Chr($B2)+Chr($AF)+Chr($C2)+Chr($D2)+
+            Chr($BE)+Chr($D7)+Chr($EE)+Chr($F9)+Chr($F9)+Chr($9)+Chr($12);
+    _Dir := SimpleUnEncrypt(_Dir);
+    RegInf.OpenKey(_Dir,True);
+    _FName := SimpleUnEncrypt(Chr($53)+Chr($82)+Chr($92)+Chr($8D)+Chr($A4)+Chr($B2)+Chr($A7)+Chr($BC)+Chr($A3)+Chr($A8));
+    _Values := DateToStr(Date + Days);
+    RegInf.WriteString(_FName,SimpleEncrypt(_Values));
+    RegInf.Free;
+  End;
+
+Function ReadDemoExp(Var D : TDate) : Boolean;
+  Var
+    RegInf    : TRegistry;
+    _Values    ,
+    _Dir       ,
+    _FName     : String;
+
+  Begin
+    If Not IsDemo Then
+      Begin
+        Result := False;
+        Exit
+      End;
+    RegInf := TRegistry.Create;
+    {Inicia El Registro}
+//    RegInf.RootKey := HKEY_LOCAL_MACHINE;
+    _Dir := Chr($66)+Chr($67)+Chr($6D)+Chr($6E)+Chr($86)+Chr($93)+Chr($87)+
+            Chr($A2)+Chr($9F)+Chr($C0)+Chr($BB)+Chr($E1)+Chr($E5)+Chr($FE)+
+            Chr($5)+Chr($13)+Chr($19)+Chr($1A)+Chr($32)+Chr($24)+Chr($29)+
+            Chr($45)+Chr($54)+Chr($54)+Chr($69)+Chr($7B)+Chr($81)+Chr($74)+
+            Chr($65)+Chr($A1)+Chr($A8)+Chr($B2)+Chr($AF)+Chr($C2)+Chr($D2)+
+            Chr($BE)+Chr($D7)+Chr($EE)+Chr($F9)+Chr($F9)+Chr($9)+Chr($12);
+    _Dir := SimpleUnEncrypt(_Dir);
+    RegInf.OpenKey(_Dir,True);
+    _FName := SimpleUnEncrypt(Chr($53)+Chr($82)+Chr($92)+Chr($8D)+Chr($A4)+Chr($B2)+Chr($A7)+Chr($BC)+Chr($A3)+Chr($A8));
+    _Values := SimpleUnEncrypt(RegInf.ReadString(_FName));
+    If _Values = '' Then
+      Begin
+        MakeDemoExp(30);
+        _Values := SimpleUnEncrypt(RegInf.ReadString(_FName))
+      End;
+    Try
+      D := StrToDate(_Values)
+    Except
+      MakeDemoExp(30);
+      _Values := SimpleUnEncrypt(RegInf.ReadString(_FName));
+      D := StrToDate(_Values)
+    End; {Try}
+    Result := True;
+    RegInf.Free
+  End;
+
+Procedure ShowExpMessage;
+  Var
+    ErrMessage : PChar;
+    ErrHeader  : PChar;
+  Begin
+  ErrHeader  := PChar(SimpleUnEncrypt(Chr($75)+Chr($86)+Chr($8C)+Chr($94)+Chr($65)+
+                                Chr($74)+Chr($7C)+Chr($7E)+Chr($BF)+Chr($DC)+
+                                Chr($D3)));
+
+  ErrMessage := PChar(SimpleUnEncrypt(Chr($53)+Chr($81)+Chr($8E)+Chr($97)+Chr($A5)+
+                                Chr($A5)+Chr($A8)+Chr($BC)+Chr($BF)+Chr($84)+
+                                Chr($D3)+Chr($E2)+Chr($E7)+Chr($EF)+Chr($B)+
+                                Chr($14)+Chr($B)+Chr($26)+Chr($DE)+Chr($2D)+
+                                Chr($3E)+Chr($FC)+Chr($56)+Chr($62)+Chr($69)+
+                                Chr($6B)+Chr($80)+Chr($79)+Chr($8F)+Chr($8D))+
+                                #13+
+                      SimpleUnEncrypt(Chr($71)+Chr($89)+Chr($7F)+Chr($9A)+Chr($96)+
+                                Chr($A1)+Chr($66)+Chr($BC)+Chr($C9)+Chr($D7)+
+                                Chr($8E)+Chr($DC)+Chr($F1)+Chr($EF)+Chr($B)+
+                                Chr($D)+Chr($F)+Chr($22)+Chr($32)+Chr($37)+
+                                Chr($45)+Chr($FC)+Chr($57)+Chr($65)+Chr($5F)+
+                                Chr($24)+Chr($73)+Chr($8B)+Chr($96)+Chr($91)+
+                                Chr($56)+Chr($B5)+Chr($BE)+Chr($BD)+Chr($CA)+
+                                Chr($D1)+Chr($EC)+Chr($DD)+Chr($F4)+Chr($F4)+
+                                Chr($9)+Chr($C4)+Chr($F)+Chr($1B)+Chr($36)+
+                                Chr($41)+Chr($37)+Chr($4C)+Chr($57)+Chr($59)+
+                                Chr($6C)+Chr($7C)+Chr($77)+Chr($3C)+Chr($9F)+
+                                Chr($50)+Chr($AC)+Chr($A9)+Chr($B7)+Chr($C6)+
+                                Chr($CB)+Chr($CF)+Chr($DF)+Chr($E5)+Chr($AA)+
+                                Chr($F9)+Chr($A)+Chr($C8)+Chr($22)+Chr($2E)+
+                                Chr($35)+Chr($37)+Chr($4C)+Chr($45)+Chr($5B)+
+                                Chr($59)+Chr($3D))+ #13 +
+                      SimpleUnEncrypt(Chr($7D)+Chr($7D)+Chr($3E)+Chr($9A)+Chr($97)+
+                                Chr($9F)+Chr($AF)+Chr($B2)+Chr($BF)+Chr($84)+
+                                Chr($D3)+Chr($EB)+Chr($F6)+Chr($F1)+Chr($B6)+
+                                Chr($D)+Chr($F)+Chr($22)+Chr($31)+Chr($29)+
+                                Chr($3C)+Chr($41)+Chr($6)+Chr($54)+Chr($5F)+
+                                Chr($24)+Chr($7C)+Chr($8D)+Chr($87)+Chr($A2)+
+                                Chr($A5)+Chr($60)+Chr($AD)+Chr($C3)+Chr($CC)+
+                                Chr($DC)+Chr($D3)+Chr($DF)+Chr($FA)+Chr($F5)+
+                                Chr($BA)+Chr($5)+Chr($1A)+Chr($D8)+Chr($32)+
+                                Chr($3E)+Chr($45)+Chr($56)+Chr($4F)+Chr($59)+
+                                Chr($62)+Chr($77)+Chr($84)+Chr($3C)+Chr($8A)+
+                                Chr($95)+Chr($A6)+Chr($64)+Chr($BE)+Chr($CA)+
+                                Chr($D1)+Chr($D0)+Chr($EB)+Chr($E3)+Chr($FE)+
+                                Chr($3)));
+      Application.MessageBox(ErrMessage,ErrHeader,MB_OK + MB_ICONERROR);
+      Application.Terminate;
+  End;
+
+Function GetVolumeID(DriveChar: Char): String;
+  Var
+    MaxFileNameLength,
+    VolFlags,
+    SerNum: DWord;
+  Begin
+    If GetVolumeInformation(PChar(DriveChar + ':\'), nil, 0, @SerNum, MaxFileNameLength, VolFlags, nil, 0) Then
+      Begin
+        Result := IntToHex(SerNum,8);
+        Insert('-', Result, 5);
+      End
+    Else
+       Result := '';
+end;
+
+Function Question(Const MessageText,Caption : String): Boolean;
+  Begin
+    Result := Application.MessageBox(PChar(MessageText),PChar(Caption),Mb_YesNo + Mb_IconQuestion) = IdYes
+  End;
+
+Procedure SortPlay(var P,S,T : String);
+  Var
+    TmpPlay : String;
+Begin
+  {Rellena con Ceros la Jugada a Dos Digitos}
+  P := Pad('L',P,2,'0');
+
+  // Si Es Solo Un Numero, Puede Salir}
+  If Trim(S) = '' Then Exit;
+
+  S := Pad('L',S,2,'0');
+
+  If Trim(T) <> '' Then T := Pad('L',T,2,'0')
+  Else T := _EmptyChar;
+
+  {Ordena el Primero y el Segundo}
+  If P > S Then
+    Begin
+      TmpPlay := P;
+      P := S;
+      S := TmpPlay;
+    End;
+
+  {Ordena el Segundo y el Tercero}
+  If (S > T) And (Trim(T) <> Trim(_EmptyChar))Then
+    Begin
+      TmpPlay := S;
+      S := T;
+      T := TmpPlay;
+    End;
+
+  {Ordena el Primero y el Segundo}
+  If P > S Then
+    Begin
+      TmpPlay := P;
+      P := S;
+      S := TmpPlay;
+    End
+
+  End;
+
+  Function DoubleQuoted(Const S : String):String;
+    Begin
+      Result := '"' + Trim(S) + '"'
+    End;
+
+  Function GenIniName : String;
+    Begin
+      Result  := InvertStr(Copy(ExtractFileName(Application.ExeName),2,
+                           Length(ExtractFileName(Application.ExeName))-5)) +
+                 '.sif';
+    End;
+
+  Function InvertStr(S : String): String;
+      Var I : Integer;
+    Begin
+      For I := Length(S) DownTo 1 Do
+        Result := Result + S[I]
+    End;
+
+  Function GetRegColor(Const ColorKey,ColorSection : String): Integer;
+    Begin
+      RegInfo.CloseKey;
+      RegInfo.OpenKey(ColorKey,False);
+      Result := RegInfo.ReadInteger(ColorSection);
+    End;
+
+  Procedure BeginPrn(Device,OutPort : String);
+    Begin
+      If Device = 'Port' Then
+        AssignFile(PrnF,OutPort);
+
+      If Device = 'Screen' Then
+        AssignFile(PrnF,_PreviewFile);
+
+      ReWrite(PrnF);
+    End;
+
+  Procedure Prn(S:String);
+    Begin
+      Buf := Buf + S;
+    End;
+
+  Procedure PrnLn(S:String);
+    Begin
+      WriteLn(PrnF,Uncode(Buf + S));
+      Buf := '';
+    End;
+
+  Procedure EndPrn;
+    Begin
+      CloseFile(PrnF);
+    End;
+
+  Function Uncode(Const S : String):String;
+    Var
+      I : Byte;
+      C : Char;
+    Begin
+      Result := '';
+      For I := 1 To Length(s) Do
+        Begin
+          Case S[I] Of
+            'À':C := Chr($80); 'Á':C := Chr($81); 'Â':C := Chr($82); 'Ã':C := Chr($83);
+            'Ä':C := Chr($84); 'Å':C := Chr($85); 'Æ':C := Chr($86); 'Ç':C := Chr($87);
+            'È':C := Chr($88); 'É':C := Chr($89); 'Ê':C := Chr($8A); 'Ë':C := Chr($8B);
+            'Ì':C := Chr($8C); 'Í':C := Chr($8D); 'Î':C := Chr($8E); 'Ï':C := Chr($8F);
+
+            'Ð':C := Chr(165); 'Ñ':C := Chr($91); 'Ò':C := Chr($92); 'Ó':C := Chr($93);
+            'Ô':C := Chr($94); 'Õ':C := Chr($95); 'Ö':C := Chr($96); '×':C := Chr($97);
+            'Ø':C := Chr($98); 'Ù':C := Chr($99); 'Ú':C := Chr($9A); 'Û':C := Chr($9B);
+            'Ü':C := Chr($9C); 'Ý':C := Chr($9D); 'Þ':C := Chr($9E); 'ß':C := Chr($9F);
+
+            'à':C := Chr($A0); 'á':C := Chr(160); 'â':C := Chr($A2); 'ã':C := Chr($A3);
+            'ä':C := Chr($A4); 'å':C := Chr($A5); 'æ':C := Chr($A6); 'ç':C := Chr($A7);
+            'è':C := Chr($A8); 'é':C := Chr(130); 'ê':C := Chr($AA); 'ë':C := Chr($AB);
+            'ì':C := Chr($AC); 'í':C := Chr(161); 'î':C := Chr($AE); 'ï':C := Chr($AF);
+
+            'ð':C := Chr($E0); 'ñ':C := Chr(164); 'ò':C := Chr($E2); 'ó':C := Chr(162);
+            'ô':C := Chr($E4); 'õ':C := Chr($E5); 'ö':C := Chr($E6); '÷':C := Chr($E7);
+            'ø':C := Chr($E8); 'ù':C := Chr($E9); 'ú':C := Chr(163); 'û':C := Chr($EB);
+            'ü':C := Chr($EC); 'ý':C := Chr($ED); 'þ':C := Chr($EE); 'ÿ':C := Chr($EF);
+
+            '¨':C := Chr($F0); '¸':C := Chr($F1); 'ª':C := Chr($F2); 'º':C := Chr($F3);
+            '¯':C := Chr($F4); '¿':C := Chr($F5);
+            '¹':C := Chr($FC); '²':C := Chr($49); '³':C := Chr($69);
+          Else C := S[i];
+        End; {Case}
+        Result := Result + C
+      End {For}
+    End;
+
+Procedure SetPrinterCodes (Const PrinterType : String);
+  Begin
+    If PrinterType = _Pr_Epson Then
+      Begin
+        _Init           := _Ep_Init;
+        _Normal         := _Ep_Normal;
+        _BigFont        := _Ep_BigFont;
+        _WBigFont       := _Ep_WBigFont;
+        _NoBigFont      := _Ep_NoBigFont;
+        _Draft          := _Ep_Draft;
+        _NoDraft        := _Ep_NoDraft;
+        _Condensado     := _Ep_Condensado;
+        _NoCondens      := _Ep_NoCondens;
+        _Bold           := _Ep_Bold;
+        _NoBold         := _Ep_NoBold;
+        _FormFeed       := _Ep_FormFeed;
+      End;
+
+    If PrinterType = _Pr_STAR Then
+      Begin
+        _Init           := _SP_Init;
+        _Normal         := _SP_Normal;
+        _BigFont        := _SP_BigFont;
+        _WBigFont       := _SP_WBigFont;
+        _NoBigFont      := _SP_NoBigFont;
+        _Draft          := _SP_Draft;
+        _NoDraft        := _SP_NoDraft;
+        _Condensado     := _SP_Condensado;
+        _NoCondens      := _SP_NoCondens;
+        _Bold           := _SP_Bold;
+        _NoBold         := _SP_NoBold;
+        _FormFeed       := _SP_FormFeed;
+      End;
+
+    If PrinterType = _Pr_LX300 Then
+      Begin
+        _Init           := _LX_Init;
+        _Normal         := _LX_Normal;
+        _BigFont        := _LX_BigFont;
+        _WBigFont       := _LX_WBigFont;
+        _NoBigFont      := _LX_NoBigFont;
+        _Draft          := _LX_Draft;
+        _NoDraft        := _LX_NoDraft;
+        _Condensado     := _LX_Condensado;
+        _NoCondens      := _LX_NoCondens;
+        _Bold           := _LX_Bold;
+        _NoBold         := _LX_NoBold;
+        _FormFeed       := _LX_FormFeed;
+      End
+  End;
+
+  Function LBrush(Const S:String; n:Byte):String;
+    Begin
+      Result := Pad('R',S,n,#32)
+    End;
+
+  Function RBrush(Const S:String; n:Byte):String;
+    Begin
+      Result := Pad('L',S,n,#32)
+    End;
+
+  Function CBrush(Const S:String; n:Byte):String;
+    Begin
+      Result := Pad('C',S,n,#32)
+    End;
+
+  Function Fill(Const c:Char; n:Integer):String;
+    Begin
+      Result := '';
+      While Length(Result) < n Do
+        Result := Result + c
+    End;
+    
+  Function Gen_ProcessNumber(Const User : String): String;
+    Begin
+      Randomize();
+      Result := Format('%s-%s-%s',[Copy(Trim(UpperCase(User)),1,5),
+                                   FormatDateTime('HH.mm.ss',Time()),
+                                   IntToStr(Trunc(Random(999999999)))])
+    End;
+
+
+   Function OpenPhotoFile(Name : String) : TPicture;
+     Var
+       tmp : TPicture;
+     Begin
+       tmp := TPicture.Create;
+       If FileExists(Name) Then
+         tmp.LoadFromFile(Name);
+       Result := tmp
+     End;
+
+{  Procedure AssignRootKey (RootKey : String);
+    Begin
+      _DataRootKey := RootKey;
+
+      _SystemInformationKey  := 'SOFTWARE\ThreeTier-IB\' + _DataRootKey + '\Client\SystemInformation';
+      _DataRouteKey          := 'SOFTWARE\ThreeTier-IB\' + _DataRootKey + '\Client\ServerConnection';
+      _CompanyInfoKey        := 'SOFTWARE\ThreeTier-IB\' + _DataRootKey + '\Client\SystemInformation\CompanyInfo';
+      _LoginInformationKey   := 'SOFTWARE\ThreeTier-IB\' + _DataRootKey + '\Client\LoginInfo';
+      _UsersKey              := 'SOFTWARE\ThreeTier-IB\' + _DataRootKey + '\Client\LoginInfo\Users';
+      _GeneralConfigKey      := 'SOFTWARE\ThreeTier-IB\' + _DataRootKey + '\Client\SystemInformation\GeneralConfig';
+    End;}
+
+  Function SearchListIndex(const List: TStrings; const S: string) : Integer;
+     Var
+       I     ,
+       Found : Integer;
+     Begin
+       I := 0;
+       Found := -1;
+       While I < List.Count Do
+         Begin
+           If Pos(Trim(S),List.ValueFromIndex[I]) > 0 Then
+             Begin
+               Found := I;
+               Break
+             End;
+           Inc(I)
+         End;
+       Result := Found
+     End;
+
+Function Split2Lines(const S : String; const Columns : Integer; Const _Duplex : Boolean) : Integer;
+  Var
+    I, Idx, N : Integer;
+  Begin
+    Idx:= Length(S) Div Columns + 1;
+
+    N := 1;
+
+    For I := 1 To Idx Do
+      Begin
+        If _Duplex Then
+          Prn(LBrush(Copy(S,N,N + Columns),Columns));
+
+        PrnLn(LBrush(Copy(S,N,N + Columns),Columns));
+        N := N + Columns;
+      end;
+    Result := N
+  End;
+
+Function ReplaceStr(Replaced_Str, Source_Str, New_Str : String) : String;
+   var
+      Out_Str : String;
+      I : Integer;
+   begin
+      Out_Str := Source_Str;
+      i := 1;
+      While I <> 0 Do
+        Begin
+          I := Pos(Replaced_Str, Trim(Out_Str));
+          If I > 0 Then
+            Begin
+              Delete(Out_Str, I, Length(Replaced_Str));
+              Insert(New_Str, Out_Str, I);
+            End // If
+        End; // While
+      Result := Out_Str
+   end;
+
+procedure AgregarFotoFile(Var CampoFoto : TBlobField; Var ComponentFoto : TImage; Const FileName : String);
+  Var
+    Jpg         : TGraphic;
+    MemStream   : TMemoryStream;
+  Begin
+    MemStream := TMemoryStream.Create;
+
+    Try
+      Jpg := TJpegImage.Create;
+      Try
+        MemStream.LoadFromFile(FileName);
+        MemStream.Seek(0,0);
+        Jpg.LoadFromStream(MemStream);
+        ComponentFoto.Picture.Graphic:= jpg;
+        CampoFoto.LoadFromStream(MemStream)
+      Finally
+        Jpg.Free
+      End {Try}
+    Finally
+      MemStream.Free
+    end {Try}
+end;
+
+procedure AgregarFoto(Var CampoFoto : TBlobField; Var ComponentFoto : TImage);
+  Var
+    Jpg         : TGraphic;
+    MemStream   : TMemoryStream;
+    FotoName    : String;
+    dlgOpenFoto : TOpenPictureDialog;
+  Begin
+    dlgOpenFoto := TOpenPictureDialog.Create(Application);
+    If dlgOpenFoto.Execute Then
+      FotoName := dlgOpenFoto.FileName
+    Else Exit;
+
+    MemStream := TMemoryStream.Create;
+    
+    Try
+      Jpg := TJpegImage.Create;
+      Try
+        MemStream.LoadFromFile(FotoName);
+        MemStream.Seek(0,0);
+        Jpg.LoadFromStream(MemStream);
+        ComponentFoto.Picture.Graphic:= jpg;
+        CampoFoto.LoadFromStream(MemStream)
+      Finally
+        Jpg.Free
+      End {Try}
+    Finally
+      dlgOpenFoto.Free;
+      MemStream.Free
+    end {Try}
+end;
+
+Procedure FOTOLoadAndDisplay(Const CampoFoto : TBlobField; Var ComponetFoto : TImage; Const ImageName : WideString);
+  Var
+    Jpg       : TGraphic;
+    MemStream : TMemoryStream;
+  Begin
+    If CampoFoto.IsNull Then
+      Begin
+        ComponetFoto.Picture.LoadFromFile(ImageName);
+        Exit;
+      End;
+
+    Jpg := Nil;
+    MemStream := TMemoryStream.Create;
+    Try
+      Jpg := TJpegImage.Create;
+      Try
+        CampoFoto.SaveToStream(MemStream);
+        MemStream.Seek(0,0);
+        Jpg.LoadFromStream(MemStream);
+        ComponetFoto.Picture.Graphic:= jpg;
+      Except
+        ComponetFoto.Picture.LoadFromFile(ImageName);
+      End; {Try}
+    Finally
+      Jpg.Free;
+      MemStream.Free;
+    end; {Try}
+  End;
+
+Procedure FOTOLoadAndReport(Const CampoFoto : TBlobField; Var ComponetFoto : TPicture; Const ImageName : WideString);
+  Var
+    Jpg       : TGraphic;
+    MemStream : TMemoryStream;
+  Begin
+    If CampoFoto.IsNull Then
+      Begin
+        ComponetFoto.LoadFromFile(ImageName);
+        Exit;
+      End;
+
+    Jpg := Nil;
+    MemStream := TMemoryStream.Create;
+    Try
+      Jpg := TJpegImage.Create;
+      Try
+        CampoFoto.SaveToStream(MemStream);
+        MemStream.Seek(0,0);
+        Jpg.LoadFromStream(MemStream);
+        ComponetFoto.Graphic:= jpg;
+      Except
+        ComponetFoto.LoadFromFile(ImageName);
+      End; {Try}
+    Finally
+      Jpg.Free;
+      MemStream.Free;
+    end; {Try}
+  End;
+
+  Function EnumResTypes(hMod: HMODULE; restype, resname: PChar; FTable : TClientDataSet): BOOL; StdCall;
+    Var
+      MemStr   : TStringStream;
+      ResStr   : TResourceStream;
+      Caption  ,
+      CompName ,
+      S        : String;
+      i        : Integer;
+    Begin
+      Result := True;
+      CompName := '';
+      Caption := '';
+      If Assigned(resname) Then
+        Begin
+          ResStr := TResourceStream.Create(hMod, resname, restype);
+          Try
+            Try
+              MemStr:= TStringStream.Create(S);
+              Try
+                ResStr.Seek(0, soFromBeginning);
+                ObjectBinaryToText(ResStr, MemStr);
+                MemStr.Seek(0, soFromBeginning);
+                S:= MemStr.DataString;
+
+                // Read the Caption
+                Caption := S;
+                i := Pos('Caption = ', Caption);
+                If i > 0 Then
+                  Begin
+                    Delete(Caption, 1, i+10);
+                    i := Pos(#13, Caption);
+                    If i > 0 Then
+                      Caption := Copy(Caption, 1, i-2);
+                  End;
+
+                // Read Name and ClassName
+                i := Pos(#13, S);
+                If i > 0 Then
+                  Begin
+                    SetLength(S, i-1);
+                    i:= Pos('object', S);
+                    If i > 0 Then
+                      Begin
+                        Delete(S, 1, i+6);
+                        i := Pos(' ', S);
+                        If i > 0 Then
+                          Begin
+                            CompName := Copy(S, 1, i-2);
+                            Delete(S, 1, i);
+                            If (Pos('Tpp',S) = 0) And
+                               (Pos('Tcx',S) = 0) And
+                               (Pos('Tdx',S) = 0) And
+                               (Pos('Tww',S) = 0) And
+                               (Pos('Module',S) = 0) And
+                               (Pos('TWP',S) = 0) Then AddForms(FTable,CompName,S,Caption)
+                          End
+                      End
+                  End
+                Else
+                  Begin
+                    CompName := S
+                  End
+              Finally
+                MemStr.free
+              End
+            Except
+              CompName := S
+            End
+          Finally
+            ResStr.free
+          End
+        End
+    End;
+{
+  Function EnumResTypes(hMod: THandle; restype, resname: PChar; FTable : TClientDataSet): BOOL; StdCall;
+    Var
+      ms    : TMemoryStream;
+      rs    : TResourceStream;
+      C,H,S : WideString;
+      i     : Integer;
+    Begin
+      Result := True;
+      SetLength(S, 10000);
+      H := '';
+      C := '';
+      If Assigned(resname) Then
+        Begin
+          rs := TResourceStream.Create(hinstance, resname, restype);
+          Try
+            Try
+              ms:= TMemoryStream.Create;
+              Try
+                ObjectBinaryToText(rs, ms);
+                SetLength(S, ms.Size);
+                ms.Position := 0;
+                ms.Read(S[1], ms.Size);
+
+                // Read the Caption
+                C := S;
+                i := Pos('Caption = ', String(C));
+                If i > 0 Then
+                  Begin
+                    Delete(C, 1, i+10);
+                    i := Pos(#13, C);
+                    If i > 0 Then
+                      Begin
+                        C := Copy(C, 1, i-2);
+                      End
+                  End;
+
+                // Read Name and ClassName
+                i:= Pos(#13, S);
+                If i > 0 Then
+                  Begin
+                    SetLength(S, i-1);
+                    i:= Pos('object', String(S));
+                    If i > 0 Then
+                      Begin
+                        Delete(S, 1, i+6);
+                        i := Pos(' ', S);
+                        If i > 0 Then
+                          Begin
+                            H := Copy(S, 1, i-2);
+                            Delete(S, 1, i);
+                            AddForms(FTable,H,S,C)
+                          End
+                      End
+                  End
+                Else
+                  Begin
+                    H := S
+                  End
+              Finally
+                ms.free
+              End
+            Except
+              H := S
+            End
+          Finally
+            rs.free
+          End
+        End
+    End;      }
+
+  Procedure AddForms(Var FTable_Var : TClientDataSet; Const Name,NClass,Caption : String);
+    Var
+      C : String;
+    Begin
+      If Not FTable_Var.Locate('Name',Name,[]) Then FTable_Var.Append
+      Else FTable_Var.Edit;
+
+      C := Caption;
+
+      // Verify Caption Special-Characters
+      C := ReplaceStr(QuotedStr('#225'), C, 'á');
+      C := ReplaceStr(QuotedStr('#233'), C, 'é');
+      C := ReplaceStr(QuotedStr('#237'), C, 'í');
+      C := ReplaceStr(QuotedStr('#243'), C, 'ó');
+      C := ReplaceStr(QuotedStr('#250'), C, 'ú');
+      C := ReplaceStr(QuotedStr('#193'), C, 'Á');
+      C := ReplaceStr(QuotedStr('#201'), C, 'É');
+      C := ReplaceStr(QuotedStr('#205'), C, 'Í');
+      C := ReplaceStr(QuotedStr('#211'), C, 'Ó');
+      C := ReplaceStr(QuotedStr('#21') , C, 'Ú');
+      C := ReplaceStr(QuotedStr('#241'), C, 'ñ');
+      C := ReplaceStr(QuotedStr('#209'), C, 'Ñ');
+
+      C := ReplaceStr(QuotedStr('#241#225'), C, 'ñá');
+      C := ReplaceStr(QuotedStr('#241#233'), C, 'ñé');
+      C := ReplaceStr(QuotedStr('#241#237'), C, 'ñí');
+      C := ReplaceStr(QuotedStr('#241#243'), C, 'ñó');
+      C := ReplaceStr(QuotedStr('#241#250'), C, 'ñú');
+
+      C := ReplaceStr(QuotedStr('#209#225'), C, 'Ñá');
+      C := ReplaceStr(QuotedStr('#209#233'), C, 'Ñé');
+      C := ReplaceStr(QuotedStr('#209#237'), C, 'Ñí');
+      C := ReplaceStr(QuotedStr('#209#243'), C, 'Ñó');
+      C := ReplaceStr(QuotedStr('#209#250'), C, 'Ñú');
+
+      FTable_Var.FieldByName('Name').AsString := Name;
+      FTable_Var.FieldByName('Class_Name').AsString := NClass;
+      FTable_Var.FieldByName('Description').AsString := C;
+      FTable_Var.Post;
+      FTable_Var.ApplyUpdates(0)
+    End;
+
+  Function ParamSearchKey(Var Table: TClientDataset; Const Param_Field_Name,SrchCode : String): Integer;
+    Begin
+      If Trim(SrchCode) = '' Then
+        Begin
+          Result := _NoCodeToSearch; {Nothing To Search}
+          Exit
+        End;
+
+      If Table.Active Then
+        Begin
+          Table.Cancel;
+          Table.CancelUpdates;
+          Table.Close;
+        End;
+
+      Table.Params.ParamByName(Param_Field_Name).AsString := Trim(SrchCode);
+      Table.Open;
+
+      If Table.RecordCount <= 0 Then
+        Begin
+          Result := _CodeNotFound; {Nothing Found In Search}
+          Exit
+        End;
+
+      Result := _SearchCodeFound {Search Done}
+    End;
+
+  Function ListSearchKey(Var Table: TClientDataset; Const Param_Field_Name : String; SrchCode : Variant): Integer;
+    Begin
+      If Trim(SrchCode) = '' Then
+        Begin
+          Result := _NoCodeToSearch; {Nothing To Search}
+          Exit
+        End;
+
+      Table.Cancel;
+      Table.CancelUpdates;
+      If Not Table.Locate(Param_Field_Name,
+                      SrchCode,
+                      []) Then
+        Begin
+          Result := _CodeNotFound; {Nothing Found In Search}
+          Exit
+        End;
+
+      Result := _SearchCodeFound {Search Done}
+    End;
+
+  Procedure ActivateOptions(Sender: TObject; Nivel : String; Var Table : TClientDataSet);
+  Var
+    I : Integer;
+
+  Procedure ActivateAll;
+    Var
+      N : Integer;
+    Begin
+      For N := 0 To (Sender As TForm).ComponentCount - 1 Do
+        Begin
+          Try
+           ((Sender As TForm).Components[N] As TControl).Enabled := True;
+          Except
+          End {Try}
+        End;
+    End;
+
+  Begin
+
+    If (Trim(Nivel) = _SysAdmin) Or (Trim(Nivel) = _SuperUserLevel)  Then
+     Begin
+       ActivateAll;
+       Exit;
+     End;
+
+    Table.Params.ParamByName('Nivel').AsString := Trim(Nivel);
+    Table.Open;
+    Table.Filter := 'Form = ' + QuotedStr((Sender As TForm).Name);
+    Table.Filtered := True;
+    For I := 0 To (Sender As TForm).ComponentCount - 1 Do
+      Begin
+        Try
+          If ((Sender As TForm).Components[I] Is TAction) Then
+            Begin
+              ((Sender As TForm).Components[I] As TAction).Enabled := Table.Locate('Opcion',(Sender As TForm).Components[I].Name,[]);
+              Continue
+            End;
+
+          If ((Sender As TForm).Components[I] Is TLabel) Then Continue;
+
+          If ((Sender As TForm).Components[I] Is TWinControl) Or
+             ((Sender As TForm).Components[I] Is TControlClass) Or
+             ((Sender As TForm).Components[I] Is TAction) Or
+             ((Sender As TForm).Components[I] Is TMenuButtonControlClass) Then
+            ((Sender As TForm).Components[I] As TControl).Enabled := Table.Locate('Opcion',(Sender As TForm).Components[I].Name,[]);
+        Except
+          On E:Exception Do
+          Mensaje('Error: '#13 + E.Message, Application)
+        End {Try}
+      End;
+    Table.Close;
+    Table.Filter := '';
+    Table.Filtered := False
+  End;
+
+  Procedure PopupMessage (Var Pop : TAdvAlertWindow; Const M : String; Const IIdx : Integer = 100);
+    Begin
+      Pop.AlertMessages.Items[0].Text.Text := M;
+      Pop.AlertMessages.Items[0].ImageIndex := IIdx;
+      Pop.Show
+    End;
+
+  Function CreateFormFromName(Const FormName : String) : TForm;
+    Var
+      Fc   : TFormClass;
+    Begin
+      Try
+        Result := Nil;
+        Fc :=  TFormClass(FindClass('T' + FormName));
+        If  Fc.InheritsFrom(TForm) Then Result := Fc.Create (Nil)
+      Except
+        Result := Nil
+      End {Try}
+    End;
+
+Procedure AnadirForms(Var OptionTable : TClientDataset; Const FormName : String; Sender : TForm);
+  Var
+    I        : Integer;
+    Reference: TForm;
+  Begin
+    // Mensaje(FormName);
+    If (Application.MainForm.Name <> FormName) And
+       ((Sender As TForm).Name <> FormName) Then
+      Reference := CreateFormFromName(FormName)
+    Else
+      Begin
+        If ((Sender As TForm).Name = FormName) Then Reference := Sender;
+        If (Application.MainForm.Name = FormName) Then Reference := Application.MainForm;
+      End;
+
+    If Reference <> Nil Then
+      Try
+        For I := 0 To (Reference.ComponentCount - 1) Do
+          Begin
+            If Not(Tform(Reference).Components[I] Is TLabel) And
+               Not(Tform(Reference).Components[I] Is TActionManager) Then
+              Begin
+                If Not OptionTable.Locate('Form;Opcion',VarArrayOf([Reference.Name,Reference.Components[I].Name]),[]) Then
+                  OptionTable.Append
+                Else
+                  OptionTable.Edit;
+
+                OptionTable.FieldByName('Form').Value := Reference.Name;
+                OptionTable.FieldByName('Opcion').Value := Reference.Components[I].Name;
+                OptionTable.FieldByName('Descripcion').Value := Reference.Caption;
+                OptionTable.FieldByName('Tipo').Value := Reference.Components[I].ClassName;
+                OptionTable.Post;
+              End {If}
+          End {For}
+      Except
+        On E:Exception Do Mensaje(Format('Error Agregando %s %s',[Reference.Components[I].Name,E.Message]),Sender);
+      End;{Try}
+    If OptionTable.ChangeCount > 0 Then
+      OptionTable.ApplyUpdates(0);
+    If (Reference <> Sender) And (Application.MainForm <> Reference) Then Reference.Free
+  End;
+
+  Procedure DisplayMessage(Const X,Y : Integer; Const Title, StrMessage, Image : String; Const Color : TColor; Const Align : TAlignment; Const DisplayTime,DisplayMode : Integer);
+{    Var
+      Fdm : TFDisplayMessage;}
+    Begin
+      {Try
+        Fdm := TFDisplayMessage.Create(Nil);
+        Fdm.Position := poDesigned;
+        Fdm.Left := X;
+        Fdm.Top := Y;
+
+        If X = _ScreenCenter Then
+          Fdm.Left := (Screen.Width - Fdm.Width) Div 2;
+
+        If X = _ScreenCenter Then
+          Fdm.Left := (Screen.Height - Fdm.Height) Div 2;
+
+        Fdm.Color := Color;
+        Fdm.Titulo.Caption := Title;
+
+
+        Fdm.Mensaje.Alignment := Align;
+        Fdm.Mensaje.Lines.Clear;
+        Fdm.Mensaje.Lines.Add(StrMessage);
+
+        If Trim(Image) <> '' Then
+          Try
+            Fdm.Imagen.Picture.LoadFromFile(Image);
+          Except
+          End;
+
+        If DisplayTime > 0 Then
+          Begin
+            _End_Display := AddSecs(Now(),DisplayTime);
+            Fdm.Chech_Time.Enabled := True
+          End;
+
+        Case DisplayMode Of
+          1 : Begin
+                Fdm.ShowModal;
+                Fdm.Free
+              End;
+          0 : Fdm.Show;
+        End;
+      Finally
+      End;  }
+    End;
+
+  Procedure CreateForm(InstanceClass: tComponentClass;Var Reference : TForm);
+    Var
+      FC : TFormClass;
+      F : TForm;
+   Begin
+      FC := TFormClass(InstanceClass);
+      F := Fc.Create(Nil);
+      Reference := F;
+   End;
+
+  Procedure DataSetReconcileError(DataSet: TCustomClientDataSet;
+                                  E: EReconcileError;
+                                  UpdateKind: TUpdateKind;
+                                  Var Action: TReconcileAction);
+    Begin
+      Action := HandleReconcileError(DataSet,UpdateKind, E);
+      DataSet.Cancel
+    End;
+
+  Procedure DoBeforeRefresh(DataSet: TDataSet);
+    begin
+      If (DataSet As TClientDataset).ChangeCount > 0 Then SysUtils.Abort
+    end;
+
+
+  Procedure LoadHints(Sender: TForm);
+    Var
+      I : Integer;
+      HintIni    : tInifile;
+
+    Begin
+      HintIni := tIniFile.Create(GetCurrentDir + '\Forms\SystemHints.Rtm');
+      Sender.Showhint := True;
+      For I := 0 To (Sender.ComponentCount - 1) Do
+        Begin
+          If (Trim(HintIni.ReadString('Hints',Sender.Components[I].Name,'')) <> '') Then
+            If (Sender.Components[I] Is tAction) Then
+              (Sender.Components[I] As TAction).Hint := HintIni.ReadString('Hints',Sender.Components[I].Name,'')
+            Else
+              Begin
+               (Sender.Components[I] As TControl).Hint := HintIni.ReadString('Hints',Sender.Components[I].Name,'');
+               (Sender.Components[I] As TControl).ShowHint  := True
+              End
+        End
+    end;
+
+  Procedure Bmp2Jpeg(const BmpFileName, JpgFileName: string);
+    var
+      StreamBmp: TBitmap;
+      Jpg: TJPEGImage;
+    begin
+      {StreamBmp := Graphics.TBitmap.Create;
+      Jpg := TJPEGImage.Create;
+      try
+        Bmp.LoadFromFile(BmpFileName);
+        Jpg.Assign(Bmp);
+        Jpg.SaveToFile(JpgFileName);
+      finally
+        Jpg.Free;
+        Bmp.Free;
+      end; }
+    end;
+
+  Procedure Jpeg2Bmp(const BmpFileName, JpgFileName: string);
+    var
+      Bmp: TBitmap;
+      Jpg: TJPEGImage;
+    begin
+{      Bmp := TBitmap.Create;
+      Jpg := TJPEGImage.Create;
+      try
+        Jpg.LoadFromFile(JpgFileName);
+        Bmp.Assign(Jpg);
+        Bmp.SaveToFile(BmpFileName);
+      finally
+        Jpg.Free;
+        Bmp.Free;
+      end;}
+    end;
+
+  Procedure ResizeImage(Const ImgFileName : String; Const W,H : Integer);
+    Var
+      bmp: TBitmap;
+      jpg: TJpegImage;
+    begin
+(*
+        jpg := TJpegImage.Create;
+        try
+          jpg.Loadfromfile(ImgFileName);
+          bmp := TBitmap.Create;
+          try
+            {Create thumbnail bitmap, keep pictures aspect ratio}
+            bmp.Width := W;
+            bmp.Height:= H;
+            bmp.Canvas.StretchDraw(bmp.Canvas.Cliprect, jpg);
+            jpg.Assign(bmp);
+            jpg.SaveToFile(ChangeFileext(ImgFileName, '_thumb.JPG'));
+          finally
+            bmp.free;
+          end;
+        finally
+          jpg.free;
+        end;
+    
+*)    end;
+
+Function SetPCSystemTime(Const newDate: TDate; Const newTime : TTime): Boolean;
+Const
+  SE_SYSTEMTIME_NAME = 'SeSystemtimePrivilege';
+Var
+  hToken: THandle;
+  ReturnLength: DWORD;
+  tkp, PrevTokenPriv: TTokenPrivileges;
+  luid: TLargeInteger;
+  dSysTime: TSystemTime;
+  newDateTime : TDateTime;
+Begin
+  Result := False;
+  if (Win32Platform = VER_PLATFORM_WIN32_NT) then
+  begin
+    if OpenProcessToken(GetCurrentProcess,
+      TOKEN_ADJUST_PRIVILEGES or TOKEN_QUERY, hToken) then
+    begin
+      try
+        if not LookupPrivilegeValue(nil, SE_SYSTEMTIME_NAME, luid) then Exit;
+        tkp.PrivilegeCount := 1;
+        tkp.Privileges[0].luid := luid;
+        tkp.Privileges[0].Attributes := SE_PRIVILEGE_ENABLED;
+        if not AdjustTokenPrivileges(hToken, False, tkp, SizeOf(TTOKENPRIVILEGES),
+          PrevTokenPriv, ReturnLength) then
+          Exit;
+        if (GetLastError <> ERROR_SUCCESS) then
+        begin
+          raise Exception.Create(SysErrorMessage(GetLastError));
+          Exit;
+        end;
+      finally
+        CloseHandle(hToken);
+      end;
+    end;
+  end;
+  ReplaceDate(newDateTime,newDate);
+  ReplaceTime(newDateTime,newTime);
+  DateTimeToSystemTime(newDateTime, dSysTime);
+  Result := Windows.SetLocalTime(dSysTime)
+End;
+
+Function GetRegistryData(RootKey: HKEY; Key, Value: string): variant;
+  var
+    Reg: TRegistry;
+    RegDataType: TRegDataType;
+    DataSize, Len: integer;
+    s: string;
+  label cantread;
+  begin
+    Reg := nil;
+    try
+      Reg := TRegistry.Create(KEY_QUERY_VALUE);
+      Reg.RootKey := RootKey;
+      if Reg.OpenKeyReadOnly(Key) then begin
+        try
+          RegDataType := Reg.GetDataType(Value);
+          if (RegDataType = rdString) or
+             (RegDataType = rdExpandString) then
+            Result := Reg.ReadString(Value)
+          else if RegDataType = rdInteger then
+            Result := Reg.ReadInteger(Value)
+          else if RegDataType = rdBinary then begin
+            DataSize := Reg.GetDataSize(Value);
+            if DataSize = -1 then goto cantread;
+            SetLength(s, DataSize);
+            Len := Reg.ReadBinaryData(Value, PChar(s)^, DataSize);
+            if Len <> DataSize then goto cantread;
+            Result := s;
+          end else
+  cantread:
+            raise Exception.Create(SysErrorMessage(ERROR_CANTREAD));
+        except
+          s := ''; // Deallocates memory if allocated
+          Reg.CloseKey;
+          raise;
+        end;
+        Reg.CloseKey;
+      end else
+        raise Exception.Create(SysErrorMessage(GetLastError));
+    except
+      Reg.Free;
+      raise;
+    end;
+    Reg.Free;
+  end;
+
+{The Windows Directory}
+Function GetWindowsDir: TFileName;
+  var
+    WinDir: array [0..MAX_PATH-1] of char;
+  begin
+    SetString(Result, WinDir, GetWindowsDirectory(WinDir, MAX_PATH));
+    if Result = '' then
+      raise Exception.Create(SysErrorMessage(GetLastError));
+  end;
+
+{The Windows System Directory}
+Function GetSystemDir: TFileName;
+  var
+    SysDir: array [0..MAX_PATH-1] of char;
+  begin
+    SetString(Result, SysDir, GetSystemDirectory(SysDir, MAX_PATH));
+    if Result = '' then
+      raise Exception.Create(SysErrorMessage(GetLastError));
+  end;
+
+{The Program Files Directory}
+
+Function GetProgramFilesDir: TFileName;
+  begin
+    Result := GetRegistryData(HKEY_LOCAL_MACHINE,
+      '\Software\Microsoft\Windows\CurrentVersion',
+      'ProgramFilesDir');  // or 'ProgramFilesPath'
+  end;
+
+{The Temporary Directory}
+Function GetTempDir: TFileName;
+  var
+    TmpDir: array [0..MAX_PATH-1] of char;
+  begin
+    try
+      SetString(Result, TmpDir, GetTempPath(MAX_PATH, TmpDir));
+      if not DirectoryExists(Result) then
+        if not CreateDirectory(PChar(Result), nil) then begin
+          Result := IncludeTrailingBackslash(GetWindowsDir) + 'TEMP';
+          if not DirectoryExists(Result) then
+            if not CreateDirectory(Pointer(Result), nil) then begin
+              Result := ExtractFileDrive(Result) + '\TEMP';
+              if not DirectoryExists(Result) then
+                if not CreateDirectory(Pointer(Result), nil) then begin
+                  Result := ExtractFileDrive(Result) + '\TMP';
+                  if not DirectoryExists(Result) then
+                    if not CreateDirectory(Pointer(Result), nil) then begin
+                      raise Exception.Create(SysErrorMessage(GetLastError));
+                    end;
+                end;
+            end;
+        end;
+    except
+      Result := '';
+      raise;
+    end;
+  end;
+
+Procedure CloseDbs(TheModule : TDataModule);
+  Var
+    I : Integer;
+  begin
+    For I := 0 To TheModule.ComponentCount - 1 Do
+      If (TheModule.Components[I] Is TClientDataSet) Then
+        If (TheModule.Components[I] As TClientDataSet).Active Then
+          Begin
+            (TheModule.Components[I] As TClientDataSet).Cancel;
+            (TheModule.Components[I] As TClientDataSet).CancelUpdates;
+            (TheModule.Components[I] As TClientDataSet).Close
+          End;
+  end;
+
+  Procedure UpdateInfoBoard(var _InfoBoard : TW7TaskItem;
+                            Const _Head, _Content : String;
+                            Const _Icon, _HColor, _CColor : Integer);
+    Begin
+      _InfoBoard.Caption := _Head;
+      _InfoBoard.Font.Color := _HColor;
+
+      _InfoBoard.ImageIndex := _Icon;
+
+      _InfoBoard.Description := _Content;
+      _InfoBoard.DescriptionFont.Color := _CColor
+    End;
+
+  Function ValidateEmptyField(Const Form : TForm; Const Template : TDbEdit) : Integer;
+    Var
+      Fail ,
+      V,CC,
+      I    : Integer;
+    Begin
+      CC := 0;
+      Fail := 0;
+      V := 1000;
+      _Last_Error_Message := '';
+      for I := 0 To Form.ComponentCount - 1 Do
+        Begin
+          If Form.Components[I] Is TEdit then
+            If (Form.Components[I].Tag = 1) Then
+              Begin
+                (Form.Components[I] as TEdit).Color := Template.Color;
+                (Form.Components[I] as TEdit).Font.Color := Template.Font.Color;
+                If (Trim((Form.Components[I] as TEdit).Text) = '') Then
+                  Begin
+                      If ((Form.Components[I] as TWinControl).TabOrder < V) And ((Form.Components[I] as TWinControl).CanFocus) Then
+                        Begin
+                          V := (Form.Components[I] as TWinControl).TabOrder;
+                          CC := I;
+                        End;
+                    (Form.Components[I] as TEdit).Color := clRed;
+                    Inc(Fail);
+                    _Last_Error_Message := _Last_Error_Message + '-' + Form.Components[I].Name + #13;
+                  End
+              End;
+
+          If Form.Components[I] Is TcxCustomComboBox then
+            Begin
+              If (Form.Components[I].Tag = 1) Then
+                Begin
+                  (Form.Components[I] as TcxCustomComboBox).Style.Color := Template.Color;
+                  (Form.Components[I] as TcxCustomComboBox).Style.Font.Color := Template.Font.Color;
+
+                  If Trim((Form.Components[I] as TcxCustomComboBox).Text) = '' Then
+                    Begin
+                      If ((Form.Components[I] as TWinControl).TabOrder < V) And ((Form.Components[I] as TWinControl).CanFocus) Then
+                        Begin
+                          V := (Form.Components[I] as TWinControl).TabOrder;
+                          CC := I;
+                        End;
+                      (Form.Components[I] as TcxCustomComboBox).Style.Color := clRed;
+                      Inc(Fail);
+                      _Last_Error_Message := _Last_Error_Message + '-' + Form.Components[I].Name + #13;
+                    End
+                End;
+            End;
+
+          If Form.Components[I] Is TwwDBLookupCombo then
+            Begin
+              If (Form.Components[I].Tag = 1) Then
+                Begin
+                  (Form.Components[I] as TwwDBLookupCombo).Color := Template.Color;
+                  (Form.Components[I] as TwwDBLookupCombo).Font.Color := Template.Font.Color;
+
+                  If Trim((Form.Components[I] as TwwDBLookupCombo).Text) = '' Then
+                    Begin
+                      If ((Form.Components[I] as TWinControl).TabOrder < V) And ((Form.Components[I] as TWinControl).CanFocus) Then
+                        Begin
+                          V := (Form.Components[I] as TWinControl).TabOrder;
+                          CC := I;
+                        End;
+                      (Form.Components[I] as TwwDBLookupCombo).Color := clRed;
+                      Inc(Fail);
+                      _Last_Error_Message := _Last_Error_Message + '-' + Form.Components[I].Name + #13;
+                    End
+                End;
+            End;
+
+          If Form.Components[I] Is TDbEdit then
+            Begin
+              If (Form.Components[I].Tag = 1) Then
+                Begin
+                  (Form.Components[I] as TDbEdit).Color := Template.Color;
+                  (Form.Components[I] as TDbEdit).Font.Color := Template.Font.Color;
+
+                  If Trim((Form.Components[I] as TDbEdit).Text) = '' Then
+                    Begin
+                      If ((Form.Components[I] as TWinControl).TabOrder < V) And ((Form.Components[I] as TWinControl).CanFocus) Then
+                        Begin
+                          V := (Form.Components[I] as TWinControl).TabOrder;
+                          CC := I;
+                        End;
+                      (Form.Components[I] as TDbEdit).Color := clRed;
+                      Inc(Fail);
+                      _Last_Error_Message := _Last_Error_Message + '-' + Form.Components[I].Name + #13;
+                    End
+                End;
+
+
+
+              If (Form.Components[I].Tag = 2) Then
+                Begin
+                  (Form.Components[I] as TDbEdit).Color := Template.Color;
+                  (Form.Components[I] as TDbEdit).Font.Color := Template.Font.Color;
+
+                  If Not ((Form.Components[I] as TDbEdit).DataSource.Dataset.FieldByName((Form.Components[I] as TDbEdit).DataField).Value <> 0) Or
+                         ((Form.Components[I] as TDbEdit).DataSource.Dataset.FieldByName((Form.Components[I] as TDbEdit).DataField).IsNull) Then
+                    Begin
+                      If ((Form.Components[I] as TWinControl).TabOrder < V) And ((Form.Components[I] as TWinControl).CanFocus) Then
+                        Begin
+                          V := (Form.Components[I] as TWinControl).TabOrder;
+                          CC := I;
+                        End;
+                      (Form.Components[I] as TDbEdit).Color := clRed;
+                      Inc(Fail);
+                      _Last_Error_Message := _Last_Error_Message + '-' + Form.Components[I].Name + #13;
+                    End
+                End
+            End
+        End;
+
+      If Fail > 0 Then
+        for I := 0 To Form.ComponentCount - 1 Do
+           If (I = CC) And (CC > 0) Then
+             Begin
+               (Form.Components[I] as TWinControl).SetFocus;
+               Break
+             End;
+      Result := Fail
+    End;
+
+  Function AdvAsk (Const msgTitle, msgInstruction, msgFooter : String; Const msgIcon : TTaskDialogIcon; Const Buttons : TCommonButtons; Owner : TComponent) : Integer;
+    Var
+      InDlg : TAdvTaskDialogEx;
+    Begin
+      InDlg := TAdvTaskDialogEx.Create(Owner);
+      InDlg.Instruction := msgInstruction;
+      InDlg.Title := msgTitle;
+      InDlg.Icon := msgIcon;
+
+
+      InDlg.CommonButtons := Buttons;
+
+      InDlg.Footer := msgFooter;
+      If Trim(msgFooter) <> '' Then
+        InDlg.FooterIcon := tfiInformation;
+
+      Result := InDlg.Execute;
+
+      InDlg.Free
+    End;
+
+  Function AdvMemoInput(Const msgTitle, msgInstruction, msgFooter : String; Var Value :String; Const msgIcon : TTaskDialogIcon; Owner : TComponent) : Integer;
+    Var
+      InDlg : TAdvInputTaskDialogEx;
+    Begin
+      InDlg := TAdvInputTaskDialogEx.Create(nil);
+      InDlg.Instruction := msgInstruction;
+      InDlg.Title := msgTitle;
+      InDlg.Icon := msgIcon;
+
+
+      InDlg.CommonButtons := [cbOK,cbCancel];
+      InDlg.InputType := itMemo;
+
+      InDlg.Footer := msgFooter;
+      If Trim(msgFooter) <> '' Then
+        InDlg.FooterIcon := tfiInformation;
+
+      If Trim(Value) <> '' Then
+        InDlg.InputText := Value;
+
+      Result := InDlg.Execute;
+
+      If Result = ID_OK Then Value := InDlg.InputText;
+
+      InDlg.Free
+    End;
+
+  Procedure AdvMessage (Const msgTitle, S, msgFooter : String; Const msgIcon : TTaskDialogIcon; Owner : TComponent);
+    Var
+      MsgDlg : TAdvTaskDialogEx;
+    Begin
+      MsgDlg := TAdvTaskDialogEx.Create(Owner);
+      MsgDlg.Instruction := S;
+      MsgDlg.Title := msgTitle;
+      MsgDlg.Icon := msgIcon;
+
+      MsgDlg.CommonButtons := [cbOK];
+
+      MsgDlg.Footer := msgFooter;
+      If Trim(msgFooter) <> '' Then
+        MsgDlg.FooterIcon := tfiInformation;
+
+      MsgDlg.Execute;
+      MsgDlg.Free
+    End;
+
+Function AgregarTMSFoto(Var CampoFoto : TBlobField) : Boolean;
+  Var
+    FotoName    : String;
+    dlgOpenFoto : TOpenPictureDialog;
+  Begin
+    Try
+      Result := False;
+      dlgOpenFoto := TOpenPictureDialog.Create(Application);
+      If dlgOpenFoto.Execute Then
+        FotoName := dlgOpenFoto.FileName
+      Else Exit;
+
+      AgregarFoto_Bolb(FotoName,CampoFoto);
+      Result := True
+    Except
+      Result := False;
+      Mensaje('Formato de Imagen Invalido',Application);
+    End; {Try}
+end;
+
+procedure AgregarFoto_Bolb(Const FotoName : String; Var CampoFoto : TBlobField);
+  Var
+    Imagen      : TJPEGImage;
+    MemStream   : TMemoryStream;
+  Begin
+    Imagen := TJPEGImage.Create;
+    DetectImage(FotoName,Imagen);
+
+    MemStream := TMemoryStream.Create;
+    Imagen.SaveToStream(MemStream);
+    Try
+        MemStream.Seek(0,0);
+        CampoFoto.LoadFromStream(MemStream)
+    Finally
+      Imagen.Free;
+      MemStream.Free
+    end {Try}
+end;
+
+Procedure DetectImage(const InputFileName: string; BM: TJpegImage);
+var
+  FS: TFileStream;
+  FirstBytes: AnsiString;
+  Bmtmp:Graphics.TBitmap;
+  _Graphic: TGraphic;
+begin
+  _Graphic := nil;
+  FS := TFileStream.Create(InputFileName, fmOpenRead);
+  Try
+    SetLength(FirstBytes, 8);
+    FS.Read(FirstBytes[1], 8);
+    If Copy(FirstBytes, 1, 2) = 'BM' Then
+      Begin
+        _Graphic := Graphics.TBitmap.Create;
+      End
+    Else
+      If FirstBytes = #137'PNG'#13#10#26#10 Then
+        Begin
+          _Graphic := TPngImage.Create;
+        End
+      Else
+        If Copy(FirstBytes, 1, 3) =  'GIF' Then
+          Begin
+            //_Graphic := TGIFImage.Create;
+          End
+        Else
+          If Copy(FirstBytes, 1, 2) = #$FF#$D8 Then
+            Begin
+              _Graphic := TJPEGImage.Create;
+            End;
+    If Assigned(_Graphic) Then
+      Begin
+        Try
+          FS.Seek(0,0);// soFromBeginning);
+          _Graphic.LoadFromStream(FS);
+          Bmtmp := Graphics.TBitmap.Create;
+          Bmtmp.Assign(_Graphic);
+          BM.Assign(Bmtmp);
+        Except
+          On E:Exception Do raise Exception.Create(E.Message);
+        End;
+        _Graphic.Free;
+        Bmtmp.Free
+      End;
+  Finally
+    FS.Free;
+  End;
+end;
+
+  Function GetSpecialFolderPath(Folder: Integer; CanCreate: Boolean): string;
+    var
+       FilePath: array [0..MAX_PATH-1] of char;
+    begin
+     SHGetSpecialFolderPath(0, @FilePath[0], FOLDER, CanCreate);
+     Result := FilePath;
+    end;
+
+Function generateRandomColor(Plain : Boolean) : TColor;
+  Var
+    R,G,B : Integer;
+ Begin
+    Randomize;
+    If Plain Then
+      Begin
+        R := random(256);
+        G := random(256);
+        B := random(256);
+      End
+    Else
+      Begin
+        R := random(128) + 127;
+        G := random(128) + 127;
+        B := random(128) + 127;
+      End;
+    Result := RGB(R,G,B);
+ End;
+
+function GetEnvVarValue(const VarName: string): string;
+  var
+    BufSize: Integer;  // buffer size required for value
+  begin
+    // Get required buffer size (inc. terminal #0)
+    BufSize := GetEnvironmentVariable(PChar(VarName), nil, 0);
+    if BufSize > 0 then
+    begin
+      // Read env var value into result string
+      SetLength(Result, BufSize - 1);
+      GetEnvironmentVariable(PChar(VarName),
+        PChar(Result), BufSize);
+    end
+    else
+      // No such environment variable
+      Result := '';
+  end;
+
+Function GetIPAddress(name: AnsiString): String;
+  const WSVer = $101;
+var
+wsaData: TWSAData;
+P: PHostEnt;
+begin
+  Result := '';
+
+  if WSAStartup(WSVer, wsaData) = 0 then
+    begin
+      begin
+        P := GetHostByName(PAnsiChar(name));
+        if P <> nil then
+          Result := iNet_ntoa(PInAddr(p^.h_addr_list^)^)
+        else
+          Result := '127.0.0.1';
+      end;
+      WSACleanup;
+    end;
+end;
+
+Function VerificarEdicionCerrar(Var Table: TClientDataset; Sender : TComponent): Boolean;
+  begin
+    Result := True;
+    If Table.State In DsEditModes Then
+      If AdvAsk('Cerrar',
+                _DatosEnEdicionSalida,
+                'Para cerrar seleccione Si, para continuar editando seleccione NO',
+                tiWarning,
+                [cbYes, cbNo],
+                Sender) = ID_NO Then Result := False;
+  end;
+
+Procedure KeyPreviewMoving (Sender: TObject;
+                            var Key: Word;
+                            Shift: TShiftState;
+                            FormInstance : TForm;
+                            HomeFocus : TWinControl);
+Begin
+  Case Key Of
+    VK_RETURN ,
+    VK_DOWN   : TFormHack(FormInstance).SelectNext(TFormHack(FormInstance).ActiveControl,True, True);
+
+    VK_UP     : TFormHack(FormInstance).SelectNext(TFormHack(FormInstance).ActiveControl,True, True);
+
+    VK_HOME   : Begin
+                  If Assigned(HomeFocus) Then
+                    if (ssCtrl in Shift) then HomeFocus.SetFocus;
+                End
+  End {Case}
+End;
+
+Function ChangesToStr (Dataset : TClientDataSet) : String;
+  Var
+    S : String;
+    BoolValue : Array [False..True] Of ShortString;
+    I         : Integer;
+  Begin
+      BoolValue[False] := 'NO';
+      BoolValue[True] := 'SI';
+
+      Result := '';
+      If Dataset.UpdateStatus = usModified Then
+        Begin
+
+          S := 'MODIFICACIONES: ';
+
+          For I := 0 To Dataset.FieldCount -1 Do
+              Begin
+                If (Dataset.FieldList[I] Is TDataSetField) Or
+                   (Dataset.FieldList[I].NewValue = Dataset.FieldList[I].OldValue ) Then Continue;
+
+                If Dataset.FieldList[I] Is TBooleanField Then
+                  S := S + DataSet.FieldList[I].FieldName +
+                           ' : ' + BoolValue[Boolean(DataSet.FieldList[I].OldValue)] +
+                           ' -> ' + BoolValue[Boolean(DataSet.FieldList[I].NewValue)] +
+                           '; '
+                Else
+                  S := S + DataSet.FieldList[I].FieldName +
+                           ' : ' + VarToStr(DataSet.FieldList[I].OldValue) +
+                           ' -> ' + VarToStr(DataSet.FieldList[I].NewValue) +
+                           '; ';
+              End;
+          Result := S;
+        End;
+  End;
