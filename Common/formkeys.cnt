@@ -1,0 +1,9 @@
+  // Rutina Comun para el manejo de las teclas de desplazamiento en el form
+  If Not _FormCursors Then Exit;
+
+  Case Key Of
+    VK_RETURN,
+    VK_DOWN  : SelectNext(ActiveControl, True, True);
+    VK_HOME  : If (ssCtrl in Shift) Then FirstComponent.SetFocus;
+    VK_UP    : SelectNext(ActiveControl, False, True);
+  End {Case}

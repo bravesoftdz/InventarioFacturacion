@@ -1,0 +1,108 @@
+﻿	<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+		<PropertyGroup>
+			<ProjectGuid>{4F6112FE-7023-4D4F-943E-53FC13E24DB4}</ProjectGuid>
+		</PropertyGroup>
+		<ItemGroup>
+			<Projects Include="Server\Validation\SCM.dproj">
+				<Dependencies/>
+			</Projects>
+			<Projects Include="Server\DataServer.dproj">
+				<Dependencies/>
+			</Projects>
+			<Projects Include="..\..\Lib\Contabilidad_Server\Acc_Server.dproj">
+				<Dependencies/>
+			</Projects>
+			<Projects Include="Client\config.dproj">
+				<Dependencies/>
+			</Projects>
+			<Projects Include="..\..\Lib\Contabilidad_Server\Validation\Acc_SCM.dproj">
+				<Dependencies/>
+			</Projects>
+			<Projects Include="Client Skin\Inventario_Cnt_SK.dproj">
+				<Dependencies/>
+			</Projects>
+			<Projects Include="..\..\Nomina\Source\Server\Validation\PRL_SCM.dproj">
+				<Dependencies/>
+			</Projects>
+		</ItemGroup>
+		<ProjectExtensions>
+			<Borland.Personality>Default.Personality.12</Borland.Personality>
+			<Borland.ProjectType/>
+			<BorlandProject>
+				<Default.Personality/>
+			</BorlandProject>
+		</ProjectExtensions>
+		<Target Name="SCM">
+			<MSBuild Projects="Server\Validation\SCM.dproj"/>
+		</Target>
+		<Target Name="SCM:Clean">
+			<MSBuild Targets="Clean" Projects="Server\Validation\SCM.dproj"/>
+		</Target>
+		<Target Name="SCM:Make">
+			<MSBuild Targets="Make" Projects="Server\Validation\SCM.dproj"/>
+		</Target>
+		<Target Name="DataServer">
+			<MSBuild Projects="Server\DataServer.dproj"/>
+		</Target>
+		<Target Name="DataServer:Clean">
+			<MSBuild Targets="Clean" Projects="Server\DataServer.dproj"/>
+		</Target>
+		<Target Name="DataServer:Make">
+			<MSBuild Targets="Make" Projects="Server\DataServer.dproj"/>
+		</Target>
+		<Target Name="Acc_Server">
+			<MSBuild Projects="..\..\Lib\Contabilidad_Server\Acc_Server.dproj"/>
+		</Target>
+		<Target Name="Acc_Server:Clean">
+			<MSBuild Targets="Clean" Projects="..\..\Lib\Contabilidad_Server\Acc_Server.dproj"/>
+		</Target>
+		<Target Name="Acc_Server:Make">
+			<MSBuild Targets="Make" Projects="..\..\Lib\Contabilidad_Server\Acc_Server.dproj"/>
+		</Target>
+		<Target Name="config">
+			<MSBuild Projects="Client\config.dproj"/>
+		</Target>
+		<Target Name="config:Clean">
+			<MSBuild Targets="Clean" Projects="Client\config.dproj"/>
+		</Target>
+		<Target Name="config:Make">
+			<MSBuild Targets="Make" Projects="Client\config.dproj"/>
+		</Target>
+		<Target Name="Acc_SCM">
+			<MSBuild Projects="..\..\Lib\Contabilidad_Server\Validation\Acc_SCM.dproj"/>
+		</Target>
+		<Target Name="Acc_SCM:Clean">
+			<MSBuild Targets="Clean" Projects="..\..\Lib\Contabilidad_Server\Validation\Acc_SCM.dproj"/>
+		</Target>
+		<Target Name="Acc_SCM:Make">
+			<MSBuild Targets="Make" Projects="..\..\Lib\Contabilidad_Server\Validation\Acc_SCM.dproj"/>
+		</Target>
+		<Target Name="Inventario_Cnt_SK">
+			<MSBuild Projects="Client Skin\Inventario_Cnt_SK.dproj"/>
+		</Target>
+		<Target Name="Inventario_Cnt_SK:Clean">
+			<MSBuild Targets="Clean" Projects="Client Skin\Inventario_Cnt_SK.dproj"/>
+		</Target>
+		<Target Name="Inventario_Cnt_SK:Make">
+			<MSBuild Targets="Make" Projects="Client Skin\Inventario_Cnt_SK.dproj"/>
+		</Target>
+		<Target Name="PRL_SCM">
+			<MSBuild Projects="..\..\Nomina\Source\Server\Validation\PRL_SCM.dproj"/>
+		</Target>
+		<Target Name="PRL_SCM:Clean">
+			<MSBuild Targets="Clean" Projects="..\..\Nomina\Source\Server\Validation\PRL_SCM.dproj"/>
+		</Target>
+		<Target Name="PRL_SCM:Make">
+			<MSBuild Targets="Make" Projects="..\..\Nomina\Source\Server\Validation\PRL_SCM.dproj"/>
+		</Target>
+		<Target Name="Build">
+			<CallTarget Targets="SCM;DataServer;Acc_Server;config;Acc_SCM;Inventario_Cnt_SK;PRL_SCM"/>
+		</Target>
+		<Target Name="Clean">
+			<CallTarget Targets="SCM:Clean;DataServer:Clean;Acc_Server:Clean;config:Clean;Acc_SCM:Clean;Inventario_Cnt_SK:Clean;PRL_SCM:Clean"/>
+		</Target>
+		<Target Name="Make">
+			<CallTarget Targets="SCM:Make;DataServer:Make;Acc_Server:Make;config:Make;Acc_SCM:Make;Inventario_Cnt_SK:Make;PRL_SCM:Make"/>
+		</Target>
+		<Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
+	</Project>

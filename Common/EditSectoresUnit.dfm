@@ -1,0 +1,316 @@
+object frmEditSectores: TfrmEditSectores
+  Left = 0
+  Top = 0
+  BorderStyle = bsNone
+  Caption = 'Edici'#243'n de Datos de Cheques'
+  ClientHeight = 125
+  ClientWidth = 560
+  Color = clBtnFace
+  Font.Charset = DEFAULT_CHARSET
+  Font.Color = clWindowText
+  Font.Height = -11
+  Font.Name = 'Tahoma'
+  Font.Style = []
+  KeyPreview = True
+  OldCreateOrder = False
+  Position = poDesktopCenter
+  OnCreate = FormCreate
+  OnKeyDown = FormKeyDown
+  PixelsPerInch = 96
+  TextHeight = 13
+  object adv_DataPanel: TAdvToolPanel
+    Left = 0
+    Top = 0
+    Width = 401
+    Height = 125
+    Align = alLeft
+    BackgroundTransparent = False
+    BackGroundPosition = bpTopLeft
+    Button3D = False
+    HoverButtonColor = 14285309
+    HoverButtonColorTo = 9102333
+    DownButtonColor = 8122111
+    DownButtonColorTo = 7131391
+    CaptionButton = False
+    Color = 15192511
+    ColorTo = 15192511
+    GradientDirection = gdVertical
+    DockDots = False
+    CanSize = False
+    Caption = 'Informaciones Generales'
+    Font.Charset = DEFAULT_CHARSET
+    Font.Color = clWindowText
+    Font.Height = -11
+    Font.Name = 'Tahoma'
+    Font.Style = [fsBold]
+    CaptionGradientDirection = gdVertical
+    ImageIndex = 5
+    FocusCaptionFontColor = 9126421
+    FocusCaptionColor = 6805503
+    FocusCaptionColorTo = 10676223
+    NoFocusCaptionFontColor = 9126421
+    NoFocusCaptionColor = 16773091
+    NoFocusCaptionColorTo = 16765357
+    CloseHint = 'Close panel'
+    LockHint = 'Lock panel'
+    UnlockHint = 'Unlock panel'
+    Sections = <
+      item
+        Autosize = False
+        Caption = 'Datos del Sector'
+        Draw = True
+        SectionItems = <>
+        Height = 100
+        CaptionImageIndex = 56
+      end>
+    SectionLayout.CaptionColor = 16772834
+    SectionLayout.CaptionColorTo = 16772834
+    SectionLayout.CaptionFontColor = 9126421
+    SectionLayout.CaptionRounded = True
+    SectionLayout.Corners = scRoundLeft
+    SectionLayout.BackGroundColor = clWhite
+    SectionLayout.BackGroundColorTo = clWhite
+    SectionLayout.BorderColor = 16765357
+    SectionLayout.BorderWidth = 1
+    SectionLayout.CaptionGradientDir = gdVertical
+    SectionLayout.BackGroundGradientDir = gdVertical
+    SectionLayout.Indent = 4
+    SectionLayout.Spacing = 4
+    SectionLayout.ItemFontColor = 9126421
+    SectionLayout.ItemHoverTextColor = 9126421
+    SectionLayout.ItemHoverUnderline = True
+    SectionLayout.UnderLineCaption = False
+    SectionImages = Modulo.SystemImages
+    ShowCaptionBorder = False
+    ShowClose = False
+    ShowLock = False
+    Style = esOffice2010Blue
+    Version = '1.5.5.0'
+    object Label1: TLabel
+      Left = 16
+      Top = 56
+      Width = 65
+      Height = 18
+      Caption = 'Iniciales'
+      FocusControl = Iniciales
+      Font.Charset = ANSI_CHARSET
+      Font.Color = clWindowText
+      Font.Height = -15
+      Font.Name = 'Tahoma'
+      Font.Style = [fsBold]
+      ParentFont = False
+    end
+    object Label2: TLabel
+      Left = 16
+      Top = 86
+      Width = 52
+      Height = 18
+      Caption = 'Nombre'
+      FocusControl = Nombre
+      Font.Charset = ANSI_CHARSET
+      Font.Color = clWindowText
+      Font.Height = -15
+      Font.Name = 'Tahoma'
+      Font.Style = []
+      ParentFont = False
+    end
+    object Label26: TLabel
+      Left = 518
+      Top = 750
+      Width = 31
+      Height = 18
+      Caption = 'Logo'
+      Font.Charset = ANSI_CHARSET
+      Font.Color = clWindowText
+      Font.Height = -15
+      Font.Name = 'Tahoma'
+      Font.Style = []
+      ParentFont = False
+    end
+    object Iniciales: TDBEdit
+      Left = 87
+      Top = 54
+      Width = 303
+      Height = 19
+      Hint = 'Nombre de la ciudad o estado'
+      CharCase = ecUpperCase
+      Ctl3D = False
+      DataField = 'Abreviatura'
+      DataSource = ModuloGenerales.dSectores
+      Font.Charset = ANSI_CHARSET
+      Font.Color = clWindowText
+      Font.Height = -15
+      Font.Name = 'Tahoma'
+      Font.Style = [fsBold]
+      ParentCtl3D = False
+      ParentFont = False
+      TabOrder = 0
+    end
+    object Nombre: TDBEdit
+      Tag = 1
+      Left = 87
+      Top = 84
+      Width = 303
+      Height = 19
+      Hint = 'Nombre de la ciudad o estado'
+      CharCase = ecUpperCase
+      Ctl3D = False
+      DataField = 'Nombre'
+      DataSource = ModuloGenerales.dSectores
+      Font.Charset = ANSI_CHARSET
+      Font.Color = clWindowText
+      Font.Height = -15
+      Font.Name = 'Tahoma'
+      Font.Style = []
+      ParentCtl3D = False
+      ParentFont = False
+      TabOrder = 1
+    end
+  end
+  object adv_OptionPanel: TAdvToolPanel
+    Left = 405
+    Top = 0
+    Width = 155
+    Height = 125
+    Align = alRight
+    BackgroundTransparent = False
+    BackGroundPosition = bpTopLeft
+    Button3D = False
+    HoverButtonColor = 14483455
+    HoverButtonColorTo = 6013175
+    DownButtonColor = 557032
+    DownButtonColorTo = 8182519
+    CaptionButton = False
+    Color = 16774371
+    ColorTo = 15587784
+    GradientDirection = gdVertical
+    DockDots = True
+    CanSize = False
+    Caption = 'Panel de Opciones'
+    CaptionGradientDirection = gdVertical
+    ImageIndex = 5
+    FocusCaptionFontColor = 7485192
+    FocusCaptionColor = 12316415
+    FocusCaptionColorTo = 7920383
+    NoFocusCaptionFontColor = 7485192
+    NoFocusCaptionColor = 16773091
+    NoFocusCaptionColorTo = 16765615
+    CloseHint = 'Close panel'
+    LockHint = 'Lock panel'
+    UnlockHint = 'Unlock panel'
+    Sections = <
+      item
+        Autosize = False
+        Caption = 'Opciones'
+        Draw = True
+        SectionItems = <>
+        Height = 100
+        CaptionImageIndex = -1
+      end>
+    SectionLayout.CaptionColor = 16635575
+    SectionLayout.CaptionColorTo = 13146742
+    SectionLayout.CaptionFontColor = clBlack
+    SectionLayout.CaptionRounded = False
+    SectionLayout.Corners = scRectangle
+    SectionLayout.BackGroundColor = 16248798
+    SectionLayout.BackGroundColorTo = 16242365
+    SectionLayout.BorderColor = 16765615
+    SectionLayout.BorderWidth = 1
+    SectionLayout.CaptionGradientDir = gdVertical
+    SectionLayout.BackGroundGradientDir = gdVertical
+    SectionLayout.Indent = 4
+    SectionLayout.Spacing = 4
+    SectionLayout.ItemFontColor = 11876608
+    SectionLayout.ItemHoverTextColor = 11876608
+    SectionLayout.ItemHoverUnderline = True
+    SectionLayout.UnderLineCaption = False
+    SectionImages = Modulo.SystemImages
+    ShowCaptionBorder = False
+    ShowClose = False
+    ShowLock = False
+    Style = esOffice2007Luna
+    Version = '1.5.5.0'
+    object gbt_Aceptar: TAdvGlowButton
+      Left = 14
+      Top = 47
+      Width = 127
+      Height = 30
+      Action = act_Aceptar
+      ImageIndex = 67
+      NotesFont.Charset = DEFAULT_CHARSET
+      NotesFont.Color = clWindowText
+      NotesFont.Height = -11
+      NotesFont.Name = 'Tahoma'
+      NotesFont.Style = []
+      Transparent = True
+      TabOrder = 0
+      TabStop = True
+      Appearance.ColorChecked = 16111818
+      Appearance.ColorCheckedTo = 16367008
+      Appearance.ColorDisabled = 15921906
+      Appearance.ColorDisabledTo = 15921906
+      Appearance.ColorDown = 16111818
+      Appearance.ColorDownTo = 16367008
+      Appearance.ColorHot = 16117985
+      Appearance.ColorHotTo = 16372402
+      Appearance.ColorMirrorHot = 16107693
+      Appearance.ColorMirrorHotTo = 16775412
+      Appearance.ColorMirrorDown = 16102556
+      Appearance.ColorMirrorDownTo = 16768988
+      Appearance.ColorMirrorChecked = 16102556
+      Appearance.ColorMirrorCheckedTo = 16768988
+      Appearance.ColorMirrorDisabled = 11974326
+      Appearance.ColorMirrorDisabledTo = 15921906
+      Layout = blGlyphLeftAdjusted
+    end
+    object gbt_Cancelar: TAdvGlowButton
+      Left = 14
+      Top = 83
+      Width = 127
+      Height = 30
+      Action = act_Cancelar
+      ImageIndex = 68
+      NotesFont.Charset = DEFAULT_CHARSET
+      NotesFont.Color = clWindowText
+      NotesFont.Height = -11
+      NotesFont.Name = 'Tahoma'
+      NotesFont.Style = []
+      Transparent = True
+      TabOrder = 1
+      TabStop = True
+      Appearance.ColorChecked = 16111818
+      Appearance.ColorCheckedTo = 16367008
+      Appearance.ColorDisabled = 15921906
+      Appearance.ColorDisabledTo = 15921906
+      Appearance.ColorDown = 16111818
+      Appearance.ColorDownTo = 16367008
+      Appearance.ColorHot = 16117985
+      Appearance.ColorHotTo = 16372402
+      Appearance.ColorMirrorHot = 16107693
+      Appearance.ColorMirrorHotTo = 16775412
+      Appearance.ColorMirrorDown = 16102556
+      Appearance.ColorMirrorDownTo = 16768988
+      Appearance.ColorMirrorChecked = 16102556
+      Appearance.ColorMirrorCheckedTo = 16768988
+      Appearance.ColorMirrorDisabled = 11974326
+      Appearance.ColorMirrorDisabledTo = 15921906
+      Layout = blGlyphLeftAdjusted
+    end
+  end
+  object Opciones_Pantalla: TActionManager
+    Images = Modulo.SystemImages
+    Left = 328
+    Top = 8
+    StyleName = 'XP Style'
+    object act_Aceptar: TAction
+      Caption = 'Aceptar'
+      ImageIndex = 67
+      OnExecute = act_AceptarExecute
+    end
+    object act_Cancelar: TAction
+      Caption = 'Cancelar'
+      ImageIndex = 68
+      OnExecute = act_CancelarExecute
+    end
+  end
+end
