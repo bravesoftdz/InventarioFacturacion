@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<nodeSet>
+  <view uin="ahdq118pr_v">
+    <property name="$defaultDiagram" value="true" />
+    <property name="$metaclass" value="Package Diagram" />
+    <property name="$name" value="default" />
+    <reference referencedUin="delphi:e_class:src:Inventario_Cnt:Niveles.@unitclass">
+      <property name="$shortcutReference" value="true" />
+      <reference referencedUin="delphi:e_field:src:Inventario_Cnt:Niveles.FNiveles" />
+      <reference referencedUin="delphi:l_ast:src:Inventario_Cnt:Niveles.FNiveles" />
+    </reference>
+    <reference referencedUin="delphi:e_class:src:Inventario_Cnt:Niveles.TFNiveles">
+      <property name="$shortcutReference" value="true" />
+      <reference referencedUin="delphi:e_field:src:Inventario_Cnt:Niveles.TFNiveles.Detalle_Niveles" />
+      <reference referencedUin="delphi:e_field:src:Inventario_Cnt:Niveles.TFNiveles.Label1" />
+      <reference referencedUin="delphi:e_field:src:Inventario_Cnt:Niveles.TFNiveles.Detalle_Opciones" />
+      <reference referencedUin="delphi:e_field:src:Inventario_Cnt:Niveles.TFNiveles.Label2" />
+      <reference referencedUin="delphi:e_field:src:Inventario_Cnt:Niveles.TFNiveles.Detalle_Permisos" />
+      <reference referencedUin="delphi:e_field:src:Inventario_Cnt:Niveles.TFNiveles.Label3" />
+      <reference referencedUin="delphi:e_field:src:Inventario_Cnt:Niveles.TFNiveles.Opciones" />
+      <reference referencedUin="delphi:e_field:src:Inventario_Cnt:Niveles.TFNiveles.Salir" />
+      <reference referencedUin="delphi:e_field:src:Inventario_Cnt:Niveles.TFNiveles.Activar" />
+      <reference referencedUin="delphi:e_field:src:Inventario_Cnt:Niveles.TFNiveles.Desactivar" />
+      <reference referencedUin="delphi:e_field:src:Inventario_Cnt:Niveles.TFNiveles.Activar_Todas" />
+      <reference referencedUin="delphi:e_field:src:Inventario_Cnt:Niveles.TFNiveles.Desactivar_Todas" />
+      <reference referencedUin="delphi:e_field:src:Inventario_Cnt:Niveles.TFNiveles.Atb_Control_Opciones" />
+      <reference referencedUin="delphi:e_field:src:Inventario_Cnt:Niveles.TFNiveles.Crear_Nivel" />
+      <reference referencedUin="delphi:e_field:src:Inventario_Cnt:Niveles.TFNiveles.Atb_Control_Niveles" />
+      <reference referencedUin="delphi:e_field:src:Inventario_Cnt:Niveles.TFNiveles.Eliminar_Nivel" />
+      <reference referencedUin="delphi:e_field:src:Inventario_Cnt:Niveles.TFNiveles.Modificar_Nivel" />
+      <reference referencedUin="delphi:e_method:src:Inventario_Cnt:Niveles.TFNiveles.FormCreate(System.Object)" />
+      <reference referencedUin="delphi:e_method:src:Inventario_Cnt:Niveles.TFNiveles.FormKeyPress(System.Object,ref@System.Char)" />
+      <reference referencedUin="delphi:e_method:src:Inventario_Cnt:Niveles.TFNiveles.SalirExecute(System.Object)" />
+      <reference referencedUin="delphi:e_method:src:Inventario_Cnt:Niveles.TFNiveles.FormClose(System.Object,ref@Forms.TCloseAction)" />
+      <reference referencedUin="delphi:e_method:src:Inventario_Cnt:Niveles.TFNiveles.ActivarExecute(System.Object)" />
+      <reference referencedUin="delphi:e_method:src:Inventario_Cnt:Niveles.TFNiveles.Activar_TodasExecute(System.Object)" />
+      <reference referencedUin="delphi:e_method:src:Inventario_Cnt:Niveles.TFNiveles.DesactivarExecute(System.Object)" />
+      <reference referencedUin="delphi:e_method:src:Inventario_Cnt:Niveles.TFNiveles.Desactivar_TodasExecute(System.Object)" />
+      <reference referencedUin="delphi:e_method:src:Inventario_Cnt:Niveles.TFNiveles.Crear_NivelExecute(System.Object)" />
+      <reference referencedUin="delphi:e_method:src:Inventario_Cnt:Niveles.TFNiveles.Eliminar_NivelExecute(System.Object)" />
+      <reference referencedUin="delphi:e_method:src:Inventario_Cnt:Niveles.TFNiveles.Modificar_NivelExecute(System.Object)" />
+      <reference referencedUin="delphi:e_method:src:Inventario_Cnt:Niveles.TFNiveles.Anadir()" />
+      <reference referencedUin="delphi:e_method:src:Inventario_Cnt:Niveles.TFNiveles.Eliminar()" />
+    </reference>
+  </view>
+</nodeSet>

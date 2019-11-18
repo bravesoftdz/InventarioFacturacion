@@ -1,0 +1,28 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<BorlandProject>
+	<PersonalityInfo>
+		<Option>
+			<Option Name="Personality">Default.Personality</Option>
+			<Option Name="ProjectType"></Option>
+			<Option Name="Version">1.0</Option>
+			<Option Name="GUID">{C221CD4C-66EE-4F23-BC27-3ACF662BE8E1}</Option>
+		</Option>
+	</PersonalityInfo>
+	<Default.Personality>  <Projects>
+      <Projects Name="SCM.exe">Server\Validation\SCM.bdsproj</Projects>
+      <Projects Name="DataServer.exe">Server\DataServer.bdsproj</Projects>
+      <Projects Name="Acc_Server.exe">..\..\Lib\Contabilidad_Server\Acc_Server.bdsproj</Projects>
+      <Projects Name="Acc_SCM.exe">..\..\Lib\Contabilidad_Server\Validation\Acc_SCM.bdsproj</Projects>
+      <Projects Name="Inventario_Cnt_Lite.exe">Client Skin\Inventario_Cnt_Lite.bdsproj</Projects>
+      <Projects Name="PRL_SCM.exe">..\..\Nomina\Source\Server\Validation\PRL_SCM.bdsproj</Projects>
+      <Projects Name="Inventario_Cnt_SK.exe">Client Skin\Inventario_Cnt_SK.bdsproj</Projects>
+      <Projects Name="Gym_Lite.exe">Gym\Gym_Lite.bdsproj</Projects>
+      <Projects Name="Starline.exe">StarLine\Starline.bdsproj</Projects>
+      <Projects Name="config.exe">Client Skin\config.bdsproj</Projects>
+      <Projects Name="Targets">SCM.exe DataServer.exe Acc_Server.exe Acc_SCM.exe Inventario_Cnt_Lite.exe PRL_SCM.exe Inventario_Cnt_SK.exe Gym_Lite.exe Starline.exe config.exe</Projects>
+    </Projects>
+    <Dependencies/>
+  </Default.Personality>
+	<StarTeamAssociation></StarTeamAssociation>
+	<StarTeamNonRelativeFiles></StarTeamNonRelativeFiles>
+</BorlandProject>

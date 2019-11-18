@@ -1,0 +1,767 @@
+  Function CountChar(Const SubStr : Char; S : String): Integer;
+    Var
+      I,L    ,
+      Holder : Integer;
+    Begin
+      L := Length(S);
+      Holder := 0;
+      For I := 1 To L Do
+        If S[I] = SubStr Then Inc (Holder);
+      Result := Holder;
+    End;
+
+  Function NumToAlpha(Number: Int64): String;
+    Const
+      Unidades : Array [1..10] Of ShortString = ('Uno' , 'Dos'   , 'Tres'   , 'Cuatro'  , 'Cinco'    , 'Seis'     , 'Siete'     , 'Ocho'     , 'Nueve'     , 'Diez');
+      Decenas  : Array [1..9]  Of ShortString = ('Diez', 'Veinte', 'Treinta', 'Cuarenta', 'Cincuenta', 'Sesenta'  , 'Setenta'   , 'Ochenta'  , 'Noventa'    );
+      Teens    : Array [1..9]  Of ShortString = ('Once', 'Doce'  , 'Trece'  , 'Catorce' , 'Quince'   , 'Dieciseis', 'Diecisiete', 'Dieciocho', 'Diecinueve' );
+    Var
+      Holder : String;
+    Begin
+      Holder := '';
+      While Number > 0 Do
+      Begin
+         Case Number Of
+          1..10 : Begin
+                   Holder := Holder + Unidades[Number];
+                   Number := 0;
+                  End;
+         11..19 : Begin
+                   Holder := Holder + Teens[Number-10];
+                   Number := 0;
+                  End;
+         20..99 : Begin
+                   Holder := Holder + Decenas[Number Div 10];
+                   Dec(Number,(Number Div 10)* 10);
+                   If Number > 0 Then Holder := Holder + ' y '
+                  End;
+      100..999 : Begin
+                   Case ((Number Div 100)* 100) Of
+                      100 : Begin
+                             If Number - ((Number Div 100)* 100) > 0 Then
+                                Holder := Holder + 'Ciento '
+                             Else
+                                Holder := Holder + 'Cien '
+                            End;
+                      500 : Holder := Holder + 'Quinientos ';
+                      700 : Holder := Holder + 'Setecientos ';
+                      900 : Holder := Holder + 'Novecientos ';
+                      Else
+                            Holder := Holder + Unidades[Number Div 100]+'cientos ';
+                   End;
+                      Dec(Number,(Number Div 100)* 100)
+                 End;
+     1000..999999: Begin
+                     If Number < 2000 Then Holder := Holder + 'Mil '
+                     Else
+                        Holder := Holder + NumToAlpha(Number Div 1000) + ' Mil ';
+                     Dec(Number,(Number Div 1000)* 1000)
+                   End;
+    1000000..999999999
+                : Begin
+                     If Number < 2000000 Then Holder := Holder + 'Millón '
+                     Else
+                        Holder := Holder + NumToAlpha(Number Div 1000000) + ' Millones ';
+                     Dec(Number,(Number Div 1000000)* 1000000)
+                   End;
+         Else Begin Holder := 'fuera de limites'; break End
+
+        End
+      End;
+      If Length(Holder) <= 0 Then Holder := '00';
+      Result := Holder
+    End;
+
+  Function RealNumToAlpha(Number: Real): String;
+    Var
+      DecPart ,
+      IntPart : String;
+    Begin
+      IntPart := NumToAlpha(Trunc(Number));
+      DecPart := NumToAlpha(Trunc(Frac(Number)*100));
+      Result := IntPart + ' Pesos con ' + DecPart + ' Centavos'
+    End;
+
+  Function PesosToUS;
+    Begin
+      Result := Pesos / Prima;
+    End;
+
+  Function USToPesos;
+    Begin
+      Result := US * Prima;
+    End;
+
+  Function Encrypt(S : String): String;
+    Var
+      TmpInt,
+      Num,
+      I,L    : Integer;
+      NewS   : String;
+    Begin
+      If Trim(S) = '' Then Exit;
+      L := Length(S);
+      Randomize;
+      Num := Random(50);
+      If Num <= 0 Then Num := _Factor;
+      NewS  := IntToStr((L + Num) * L);
+      For I := L DownTo 1 Do
+        Begin
+          If I Mod 2 = 0 Then TmpInt := ((Ord(S[I]) + Num) * L) - I
+          Else TmpInt := ((Ord(S[I]) + I) * Num) - L;
+          NewS := NewS + _Separator + IntToStr(TmpInt);
+        End;
+      Result := NewS;
+    end;
+
+  Function UnEncrypt(Const S : String): String;
+    Var
+      TmpInt,
+      Num,
+      I,_Size,H : Integer;
+      SubStr    ,
+      TmpStr    ,
+      NewS      : String;
+
+    Begin
+      If Trim(S) = '' Then Exit;
+      TmpStr := S;
+      SubStr := '';
+      _Size := CountChar(_Separator,TmpStr);
+      I := _Size;
+      H := Pos (_Separator,TmpStr);
+      SubStr := Copy (TmpStr,1,H-1);
+      Delete (TmpStr,1,H);
+      Num := StrToInt(SubStr);
+      Num := Num Div _Size;
+      Num := Num - _Size;
+      While Length(TmpStr) > 0 Do
+        Begin;
+          H := Pos (_Separator,TmpStr);
+          If H > 0 Then  SubStr := Copy (TmpStr,1,H-1)
+          Else
+            Begin
+              SubStr := TmpStr;
+              TmpStr := '';
+            End;
+
+          TmpInt := StrToInt (SubStr);
+
+          If I Mod 2 = 0 Then
+            Begin
+              TmpInt := TmpInt + I;
+              TmpInt := TmpInt Div _Size;
+              TmpInt := TmpInt - Num;
+            End
+          Else
+            Begin
+              TmpInt := TmpInt + _Size;
+              TmpInt := TmpInt Div Num;
+              TmpInt := TmpInt - I;
+            End;
+          Delete (TmpStr,1,H);
+          NewS := Char(TmpInt) + NewS;
+          Dec(I);
+        End; {While}
+      Result := NewS;
+    end;
+
+  Function SimpleEncrypt(S : String): String;
+    Var
+      I      : Integer;
+      NewS   : String;
+    Begin
+      NewS  := '';
+      For I := Length(S) DownTo 1 Do
+        NewS := Chr(Ord(S[I])+(I*10)) + NewS;
+      Result := NewS;
+    end;
+
+  Function SimpleUnEncrypt(S : String): String;
+    Var
+      I      : Integer;
+      NewS   : String;
+    Begin
+      NewS  := '';
+      For I := Length(S) DownTo 1 Do
+        NewS := Chr(Ord(S[I])-(I*10)) + NewS;
+      Result := NewS;
+    end;
+{Procedimientos}
+  Procedure Log (Const LogName,LogSection,LogKey,LogValue : String);
+    Var
+      LogFile : TInifile;
+    Begin
+      LogFile := TInifile.Create(LogName);
+      LogFile.WriteString(LogSection,LogKey,LogValue);
+      LogFile.UpdateFile;
+      LogFile.Free
+    End;
+
+Function Pad(Kind:Char;Const S:String; N:Byte; Character : Char):String;
+  Var
+    I ,
+    K : Byte;
+  Begin
+    Result := S;
+    Result := Trim(Result);
+    Result := Copy(Result,1,N);
+    Case Kind Of
+      'L': While Length(Result) < N Do
+           Result := Character + Result;
+
+      'R': While Length(Result) < N Do
+           Result := Result + Character;
+
+      'C': Begin
+             K := N - Length(Result);
+
+             If K <= 0 Then
+               Exit;
+
+             For I := 1 To K Div 2 Do
+               Result := Character + Result;
+
+             For I := 1 To (K Div 2) + (K Mod 2) Do
+               Result := Result + Character;
+           End;
+    End; {Case}
+  End;
+
+Function IsCPUID_Available : Boolean; register;
+  asm
+    PUSHFD              {direct access to flags no possible, only via stack}
+    POP     EAX         {flags to EAX}
+    MOV     EDX,EAX     {save current flags}
+    XOR     EAX,ID_BIT  {not ID bit}
+    PUSH    EAX         {onto stack}
+    POPFD               {from stack to flags, with not ID bit}
+    PUSHFD              {back to stack}
+    POP     EAX         {get back to EAX}
+    XOR     EAX,EDX     {check if ID bit affected}
+    JZ      @exit       {no, CPUID not availavle}
+    MOV     AL,True     {Result=True}
+    @exit:
+  end;
+
+Function GetCPUID : TCPUID; assembler; register;
+  asm
+    PUSH    EBX         {Save affected register}
+    PUSH    EDI
+    MOV     EDI,EAX     {@Resukt}
+    MOV     EAX,1
+    DW      $A20F       {CPUID Command}
+    STOSD               {CPUID[1]}
+    MOV     EAX,EBX
+    STOSD               {CPUID[2]}
+    MOV     EAX,ECX
+    STOSD               {CPUID[3]}
+    MOV     EAX,EDX
+    STOSD               {CPUID[4]}
+    POP     EDI         {Restore registers}
+    POP     EBX
+  end;
+
+Function GetCPUVendor : TVendor; assembler; register;
+  asm
+    PUSH    EBX              {Save affected register}
+    PUSH    EDI
+    MOV     EDI,EAX          {@Result (TVendor)}
+    MOV     EAX,0
+    DW      $A20F            {CPUID Command}
+    MOV     EAX,EBX
+    XCHG          EBX,ECX    {save ECX result}
+    MOV               ECX,4
+    @1:
+        STOSB
+        SHR     EAX,8
+        LOOP    @1
+        MOV     EAX,EDX
+        MOV     ECX,4
+    @2:
+        STOSB
+        SHR     EAX,8
+        LOOP    @2
+        MOV     EAX,EBX
+        MOV     ECX,4
+    @3:
+        STOSB
+        SHR     EAX,8
+        LOOP    @3
+        POP     EDI          {Restore registers}
+        POP     EBX
+  end;
+
+Function GetAdapterInfo(Lana: Char): String;
+  var
+     Adapter : TAdapterStatus;
+     NCB     : TNCB;
+  Begin
+    FillChar(NCB, SizeOf(NCB), 0);
+    NCB.ncb_command := Char(NCBRESET);
+    NCB.ncb_lana_num := Lana;
+    If Netbios(@NCB) <> Char(NRC_GOODRET) Then
+      Begin
+        Result := '00-??-00-??-00';
+        Exit;
+      End;
+
+    FillChar(NCB, SizeOf(NCB), 0);
+    NCB.ncb_command := Char(NCBASTAT);
+    NCB.ncb_lana_num := Lana;
+    NCB.ncb_callname := '*';
+
+    FillChar(Adapter, SizeOf(Adapter), 0);
+    NCB.ncb_buffer := @Adapter;
+    NCB.ncb_length := SizeOf(Adapter);
+    If Netbios(@NCB) <> Char(NRC_GOODRET) Then
+      Begin
+        Result := '00-??-00-??-00';
+        Exit;
+      End;
+    Result :=   IntToHex(Byte(Adapter.adapter_address[0]), 2) + '-' +
+                IntToHex(Byte(Adapter.adapter_address[1]), 2) + '-' +
+                IntToHex(Byte(Adapter.adapter_address[2]), 2) + '-' +
+                IntToHex(Byte(Adapter.adapter_address[3]), 2) + '-' +
+                IntToHex(Byte(Adapter.adapter_address[4]), 2) + '-' +
+                IntToHex(Byte(Adapter.adapter_address[5]), 2)
+  End;
+
+Function GetMACAddress: string;
+  Var
+    AdapterList : TLanaEnum;
+    NCB         : TNCB;
+  Begin
+    FillChar(NCB, SizeOf(NCB), 0);
+    NCB.ncb_command := Char(NCBENUM);
+    NCB.ncb_buffer := @AdapterList;
+    NCB.ncb_length := SizeOf(AdapterList);
+    Netbios(@NCB);
+    If Byte(AdapterList.length) > 0 Then
+      Result := GetAdapterInfo(AdapterList.lana[0])
+    Else
+      Result := '00-??-00-??-00';
+  End;
+
+Function GenCPUID : String;
+  Var
+    CPUID : TCPUID;
+    I     : Integer;
+  Begin
+    For I := Low(CPUID) To High(CPUID) Do CPUID[I] := -1;
+    If IsCPUID_Available Then
+      Begin
+        CPUID     := GetCPUID;
+        Result := IntToHex(CPUID[1],8) + '-' +
+                  IntToHex(CPUID[2],8) + '-' +
+                  IntToHex(CPUID[3],8) + '-' +
+                  IntToHex(CPUID[4],8)
+      End
+    Else
+      Result := 'N/A IAP';
+  End;
+
+Procedure Mensaje (S : String);
+  Begin
+    Application.MessageBox(PChar(S),PChar(Application.Title),MB_OK + MB_IconInformation)
+  End;
+
+Procedure CheckOptions(Sender: TObject; Nivel : String);
+  Begin
+  End;
+
+Function ValSerial : Boolean;
+  Var
+    RegInf     : TRegistry;
+    _Values    ,
+    _Dir       ,
+    _FName     : String;
+
+  Begin
+    Result := False;
+    RegInf := TRegistry.Create;
+    Try
+      {Inicia El Registro}
+      RegInf.RootKey := HKEY_LOCAL_MACHINE;
+      _Dir := Chr($66)+Chr($67)+Chr($6D)+Chr($6E)+Chr($86)+Chr($93)+Chr($87)+
+              Chr($A2)+Chr($9F)+Chr($C0)+Chr($BB)+Chr($E1)+Chr($E5)+Chr($FE)+
+              Chr($5)+Chr($13)+Chr($19)+Chr($1A)+Chr($32)+Chr($24)+Chr($29)+
+              Chr($45)+Chr($54)+Chr($54)+Chr($69)+Chr($7B)+Chr($81)+Chr($74)+
+              Chr($65)+Chr($A1)+Chr($A8)+Chr($B2)+Chr($AF)+Chr($C2)+Chr($D2)+
+              Chr($BE)+Chr($D7)+Chr($EE)+Chr($F9)+Chr($F9)+Chr($9)+Chr($12);
+      _Dir := SimpleUnEncrypt(_Dir);
+      _FName := SimpleUnEncrypt(Chr($5D)+Chr($88)+Chr($7F)+Chr($9A)+Chr($A6)+Chr($91)+Chr($B6)+Chr($99)+Chr($C8)+Chr($CA)+Chr($DD));
+      RegInf.OpenKey(_Dir,True);
+
+      _Values := RegInf.ReadString(_FName);
+      _Values := SimpleUnEncrypt(_Values);
+      If  _Values = '' Then Exit;
+
+      _FName := GetCurrentDir();
+      Result := (_Values = GetVolumeID(_FName[1]))
+    Finally
+      RegInf.Free
+    End {Try}
+  End;
+
+Function IsDemo: Boolean;
+  Const
+    _ISRegistered : String = Chr($5C)+Chr($59)+Chr($65)+Chr($71)+Chr($85)+Chr($90)+Chr($8B)+Chr($A2)+Chr($9F)+Chr($A8);
+
+  Var
+    RegInf     : TRegistry;
+    _Values    ,
+    _Dir       ,
+    _FName     : String;
+
+  Begin
+    Result := True;
+    RegInf := TRegistry.Create;
+    Try
+      {Inicia El Registro}
+      RegInf.RootKey := HKEY_LOCAL_MACHINE;
+      _Dir := Chr($66)+Chr($67)+Chr($6D)+Chr($6E)+Chr($86)+Chr($93)+Chr($87)+
+              Chr($A2)+Chr($9F)+Chr($C0)+Chr($BB)+Chr($E1)+Chr($E5)+Chr($FE)+
+              Chr($5)+Chr($13)+Chr($19)+Chr($1A)+Chr($32)+Chr($24)+Chr($29)+
+              Chr($45)+Chr($54)+Chr($54)+Chr($69)+Chr($7B)+Chr($81)+Chr($74)+
+              Chr($65)+Chr($A1)+Chr($A8)+Chr($B2)+Chr($AF)+Chr($C2)+Chr($D2)+
+              Chr($BE)+Chr($D7)+Chr($EE)+Chr($F9)+Chr($F9)+Chr($9)+Chr($12);
+      _Dir := SimpleUnEncrypt(_Dir);
+      _FName := SimpleUnEncrypt(Chr($57)+Chr($83)+Chr($82)+Chr($89)+Chr($9E)+Chr($85)+Chr($8A)+Chr($A6)+Chr($BB)+Chr($D0)+Chr($E3)+Chr($DD));
+      RegInf.OpenKey(_Dir,True);
+      _Values := RegInf.ReadString(_FName);
+      _Values := SimpleUnEncrypt(_Values);
+      If  _Values = '' Then Exit;
+
+      Result := (_Values <> SimpleUnEncrypt(_ISRegistered))
+    Finally
+      RegInf.Free
+    End {Try}
+  End;
+
+Procedure MakeDemoExp(Days : Byte);
+  Var
+    RegInf    : TRegistry;
+    _Values    ,
+    _Dir       ,
+    _FName     : String;
+
+  Begin
+    RegInf := TRegistry.Create;
+    {Inicia El Registro}
+    RegInf.RootKey := HKEY_LOCAL_MACHINE;
+    _Dir := Chr($66)+Chr($67)+Chr($6D)+Chr($6E)+Chr($86)+Chr($93)+Chr($87)+
+            Chr($A2)+Chr($9F)+Chr($C0)+Chr($BB)+Chr($E1)+Chr($E5)+Chr($FE)+
+            Chr($5)+Chr($13)+Chr($19)+Chr($1A)+Chr($32)+Chr($24)+Chr($29)+
+            Chr($45)+Chr($54)+Chr($54)+Chr($69)+Chr($7B)+Chr($81)+Chr($74)+
+            Chr($65)+Chr($A1)+Chr($A8)+Chr($B2)+Chr($AF)+Chr($C2)+Chr($D2)+
+            Chr($BE)+Chr($D7)+Chr($EE)+Chr($F9)+Chr($F9)+Chr($9)+Chr($12);
+    _Dir := SimpleUnEncrypt(_Dir);
+    RegInf.OpenKey(_Dir,True);
+    _FName := SimpleUnEncrypt(Chr($53)+Chr($82)+Chr($92)+Chr($8D)+Chr($A4)+Chr($B2)+Chr($A7)+Chr($BC)+Chr($A3)+Chr($A8));
+    _Values := DateToStr(Date + Days);
+    RegInf.WriteString(_FName,SimpleEncrypt(_Values));
+    RegInf.Free;
+  End;
+
+Function ReadDemoExp(Var D : TDate) : Boolean;
+  Var
+    RegInf    : TRegistry;
+    _Values    ,
+    _Dir       ,
+    _FName     : String;
+
+  Begin
+    If Not IsDemo Then
+      Begin
+        Result := False;
+        Exit
+      End;
+    RegInf := TRegistry.Create;
+    {Inicia El Registro}
+    RegInf.RootKey := HKEY_LOCAL_MACHINE;
+    _Dir := Chr($66)+Chr($67)+Chr($6D)+Chr($6E)+Chr($86)+Chr($93)+Chr($87)+
+            Chr($A2)+Chr($9F)+Chr($C0)+Chr($BB)+Chr($E1)+Chr($E5)+Chr($FE)+
+            Chr($5)+Chr($13)+Chr($19)+Chr($1A)+Chr($32)+Chr($24)+Chr($29)+
+            Chr($45)+Chr($54)+Chr($54)+Chr($69)+Chr($7B)+Chr($81)+Chr($74)+
+            Chr($65)+Chr($A1)+Chr($A8)+Chr($B2)+Chr($AF)+Chr($C2)+Chr($D2)+
+            Chr($BE)+Chr($D7)+Chr($EE)+Chr($F9)+Chr($F9)+Chr($9)+Chr($12);
+    _Dir := SimpleUnEncrypt(_Dir);
+    RegInf.OpenKey(_Dir,True);
+    _FName := SimpleUnEncrypt(Chr($53)+Chr($82)+Chr($92)+Chr($8D)+Chr($A4)+Chr($B2)+Chr($A7)+Chr($BC)+Chr($A3)+Chr($A8));
+    _Values := SimpleUnEncrypt(RegInf.ReadString(_FName));
+    If _Values = '' Then
+      Begin
+        MakeDemoExp(30);
+        _Values := SimpleUnEncrypt(RegInf.ReadString(_FName))
+      End;
+    Try
+      D := StrToDate(_Values)
+    Except
+      MakeDemoExp(30);
+      _Values := SimpleUnEncrypt(RegInf.ReadString(_FName));
+      D := StrToDate(_Values)
+    End; {Try}
+    Result := True;
+    RegInf.Free
+  End;
+
+Procedure ShowExpMessage;
+  Var
+    ErrMessage : PChar;
+    ErrHeader  : PChar;
+  Begin
+  ErrHeader  := PChar(SimpleUnEncrypt(Chr($75)+Chr($86)+Chr($8C)+Chr($94)+Chr($65)+
+                                Chr($74)+Chr($7C)+Chr($7E)+Chr($BF)+Chr($DC)+
+                                Chr($D3)));
+
+  ErrMessage := PChar(SimpleUnEncrypt(Chr($53)+Chr($81)+Chr($8E)+Chr($97)+Chr($A5)+
+                                Chr($A5)+Chr($A8)+Chr($BC)+Chr($BF)+Chr($84)+
+                                Chr($D3)+Chr($E2)+Chr($E7)+Chr($EF)+Chr($B)+
+                                Chr($14)+Chr($B)+Chr($26)+Chr($DE)+Chr($2D)+
+                                Chr($3E)+Chr($FC)+Chr($56)+Chr($62)+Chr($69)+
+                                Chr($6B)+Chr($80)+Chr($79)+Chr($8F)+Chr($8D))+
+                                #13+
+                      SimpleUnEncrypt(Chr($71)+Chr($89)+Chr($7F)+Chr($9A)+Chr($96)+
+                                Chr($A1)+Chr($66)+Chr($BC)+Chr($C9)+Chr($D7)+
+                                Chr($8E)+Chr($DC)+Chr($F1)+Chr($EF)+Chr($B)+
+                                Chr($D)+Chr($F)+Chr($22)+Chr($32)+Chr($37)+
+                                Chr($45)+Chr($FC)+Chr($57)+Chr($65)+Chr($5F)+
+                                Chr($24)+Chr($73)+Chr($8B)+Chr($96)+Chr($91)+
+                                Chr($56)+Chr($B5)+Chr($BE)+Chr($BD)+Chr($CA)+
+                                Chr($D1)+Chr($EC)+Chr($DD)+Chr($F4)+Chr($F4)+
+                                Chr($9)+Chr($C4)+Chr($F)+Chr($1B)+Chr($36)+
+                                Chr($41)+Chr($37)+Chr($4C)+Chr($57)+Chr($59)+
+                                Chr($6C)+Chr($7C)+Chr($77)+Chr($3C)+Chr($9F)+
+                                Chr($50)+Chr($AC)+Chr($A9)+Chr($B7)+Chr($C6)+
+                                Chr($CB)+Chr($CF)+Chr($DF)+Chr($E5)+Chr($AA)+
+                                Chr($F9)+Chr($A)+Chr($C8)+Chr($22)+Chr($2E)+
+                                Chr($35)+Chr($37)+Chr($4C)+Chr($45)+Chr($5B)+
+                                Chr($59)+Chr($3D))+ #13 +
+                      SimpleUnEncrypt(Chr($7D)+Chr($7D)+Chr($3E)+Chr($9A)+Chr($97)+
+                                Chr($9F)+Chr($AF)+Chr($B2)+Chr($BF)+Chr($84)+
+                                Chr($D3)+Chr($EB)+Chr($F6)+Chr($F1)+Chr($B6)+
+                                Chr($D)+Chr($F)+Chr($22)+Chr($31)+Chr($29)+
+                                Chr($3C)+Chr($41)+Chr($6)+Chr($54)+Chr($5F)+
+                                Chr($24)+Chr($7C)+Chr($8D)+Chr($87)+Chr($A2)+
+                                Chr($A5)+Chr($60)+Chr($AD)+Chr($C3)+Chr($CC)+
+                                Chr($DC)+Chr($D3)+Chr($DF)+Chr($FA)+Chr($F5)+
+                                Chr($BA)+Chr($5)+Chr($1A)+Chr($D8)+Chr($32)+
+                                Chr($3E)+Chr($45)+Chr($56)+Chr($4F)+Chr($59)+
+                                Chr($62)+Chr($77)+Chr($84)+Chr($3C)+Chr($8A)+
+                                Chr($95)+Chr($A6)+Chr($64)+Chr($BE)+Chr($CA)+
+                                Chr($D1)+Chr($D0)+Chr($EB)+Chr($E3)+Chr($FE)+
+                                Chr($3)));
+      Application.MessageBox(ErrMessage,ErrHeader,MB_OK + MB_ICONERROR);
+      Application.Terminate;
+  End;
+
+Function GetVolumeID(DriveChar: Char): String;
+  Var
+    MaxFileNameLength,
+    VolFlags,
+    SerNum: DWord;
+  Begin
+    If GetVolumeInformation(PChar(DriveChar + ':\'), nil, 0, @SerNum, MaxFileNameLength, VolFlags, nil, 0) Then
+      Begin
+        Result := IntToHex(SerNum,8);
+        Insert('-', Result, 5);
+      End
+    Else
+       Result := '';
+end;
+
+Function Question(Const MessageText,Caption : String): Boolean;
+  Begin
+    Result := Application.MessageBox(PAnsiChar(MessageText),PAnsiChar(Caption),Mb_YesNo + Mb_IconQuestion) = IdYes
+  End;
+
+Procedure SortPlay(var P,S,T : String);
+  Var
+    TmpPlay : String;
+Begin
+  {Rellena con Ceros la Jugada a Dos Digitos}
+  P := Pad('L',P,2,'0');
+
+  // Si Es Solo Un Numero, Puede Salir}
+  If Trim(S) = '' Then Exit;
+
+  S := Pad('L',S,2,'0');
+
+  If Trim(T) <> '' Then T := Pad('L',T,2,'0')
+  Else T := _EmptyChar;
+
+  {Ordena el Primero y el Segundo}
+  If P > S Then
+    Begin
+      TmpPlay := P;
+      P := S;
+      S := TmpPlay;
+    End;
+
+  {Ordena el Segundo y el Tercero}
+  If (S > T) And (Trim(T) <> Trim(_EmptyChar))Then
+    Begin
+      TmpPlay := S;
+      S := T;
+      T := TmpPlay;
+    End;
+
+  {Ordena el Primero y el Segundo}
+  If P > S Then
+    Begin
+      TmpPlay := P;
+      P := S;
+      S := TmpPlay;
+    End
+
+  End;
+
+  Function DoubleQuoted(Const S : String):String;
+    Begin
+      Result := '"' + Trim(S) + '"'
+    End;
+
+  Function GenIniName : String;
+    Begin
+      Result  := InvertStr(Copy(ExtractFileName(Application.ExeName),2,
+                           Length(ExtractFileName(Application.ExeName))-5)) +
+                 _IniExtension;
+    End;
+
+  Function InvertStr(S : String): String;
+      Var I : Integer;
+    Begin
+      For I := Length(S) DownTo 1 Do
+        Result := Result + S[I]
+    End;
+
+  Function GetRegColor(Const ColorKey,ColorSection : String): Integer;
+    Begin
+      RegInfo.CloseKey;
+      RegInfo.OpenKey(ColorKey,False);
+      Result := RegInfo.ReadInteger(ColorSection);
+    End;
+
+  Procedure BeginPrn(Device,OutPort : String);
+    Begin
+      If Device = 'Port' Then
+        AssignFile(PrnF,OutPort);
+
+      If Device = 'Screen' Then
+        AssignFile(PrnF,_PreviewFile);
+
+      ReWrite(PrnF);
+    End;
+
+  Procedure Prn(S:String);
+    Begin
+      Buf := Buf + S;
+    End;
+
+  Procedure PrnLn(S:String);
+    Begin
+      WriteLn(PrnF,Uncode(Buf + S));
+      Buf := '';
+    End;
+
+  Procedure EndPrn;
+    Begin
+      CloseFile(PrnF);
+    End;
+
+  Function Uncode(Const S : String):String;
+    Var
+      I : Byte;
+      C : Char;
+    Begin
+      Result := '';
+      For I := 1 To Length(s) Do
+        Begin
+          Case S[I] Of
+            'À':C := Chr($80); 'Á':C := Chr($81); 'Â':C := Chr($82); 'Ã':C := Chr($83);
+            'Ä':C := Chr($84); 'Å':C := Chr($85); 'Æ':C := Chr($86); 'Ç':C := Chr($87);
+            'È':C := Chr($88); 'É':C := Chr($89); 'Ê':C := Chr($8A); 'Ë':C := Chr($8B);
+            'Ì':C := Chr($8C); 'Í':C := Chr($8D); 'Î':C := Chr($8E); 'Ï':C := Chr($8F);
+
+            'Ð':C := Chr(165); 'Ñ':C := Chr($91); 'Ò':C := Chr($92); 'Ó':C := Chr($93);
+            'Ô':C := Chr($94); 'Õ':C := Chr($95); 'Ö':C := Chr($96); '×':C := Chr($97);
+            'Ø':C := Chr($98); 'Ù':C := Chr($99); 'Ú':C := Chr($9A); 'Û':C := Chr($9B);
+            'Ü':C := Chr($9C); 'Ý':C := Chr($9D); 'Þ':C := Chr($9E); 'ß':C := Chr($9F);
+
+            'à':C := Chr($A0); 'á':C := Chr(160); 'â':C := Chr($A2); 'ã':C := Chr($A3);
+            'ä':C := Chr($A4); 'å':C := Chr($A5); 'æ':C := Chr($A6); 'ç':C := Chr($A7);
+            'è':C := Chr($A8); 'é':C := Chr(130); 'ê':C := Chr($AA); 'ë':C := Chr($AB);
+            'ì':C := Chr($AC); 'í':C := Chr(161); 'î':C := Chr($AE); 'ï':C := Chr($AF);
+
+            'ð':C := Chr($E0); 'ñ':C := Chr(164); 'ò':C := Chr($E2); 'ó':C := Chr(162);
+            'ô':C := Chr($E4); 'õ':C := Chr($E5); 'ö':C := Chr($E6); '÷':C := Chr($E7);
+            'ø':C := Chr($E8); 'ù':C := Chr($E9); 'ú':C := Chr(163); 'û':C := Chr($EB);
+            'ü':C := Chr($EC); 'ý':C := Chr($ED); 'þ':C := Chr($EE); 'ÿ':C := Chr($EF);
+
+            '¨':C := Chr($F0); '¸':C := Chr($F1); 'ª':C := Chr($F2); 'º':C := Chr($F3);
+            '¯':C := Chr($F4); '¿':C := Chr($F5);
+            '¹':C := Chr($FC); '²':C := Chr($49); '³':C := Chr($69);
+          Else C := S[i];
+        End; {Case}
+        Result := Result + C
+      End {For}
+    End;
+
+Procedure SetPrinterCodes (Const PrinterType : String);
+  Begin
+    If PrinterType = _Pr_Epson Then
+      Begin
+        _Init           := _Ep_Init;
+        _Normal         := _Ep_Normal;
+        _BigFont        := _Ep_BigFont;
+        _WBigFont       := _Ep_WBigFont;
+        _NoBigFont      := _Ep_NoBigFont;
+        _Draft          := _Ep_Draft;
+        _NoDraft        := _Ep_NoDraft;
+        _Condensado     := _Ep_Condensado;
+        _NoCondens      := _Ep_NoCondens;
+        _Bold           := _Ep_Bold;
+        _NoBold         := _Ep_NoBold;
+        _FormFeed       := _Ep_FormFeed;
+      End;
+
+    If PrinterType = _Pr_STAR Then
+      Begin
+        _Init           := _SP_Init;
+        _Normal         := _SP_Normal;
+        _BigFont        := _SP_BigFont;
+        _WBigFont       := _SP_WBigFont;
+        _NoBigFont      := _SP_NoBigFont;
+        _Draft          := _SP_Draft;
+        _NoDraft        := _SP_NoDraft;
+        _Condensado     := _SP_Condensado;
+        _NoCondens      := _SP_NoCondens;
+        _Bold           := _SP_Bold;
+        _NoBold         := _SP_NoBold;
+        _FormFeed       := _SP_FormFeed;
+      End
+  End;
+
+  Function LBrush(Const S:String; n:Byte):String;
+    Begin
+      Result := Pad('R',S,n,#32)
+    End;
+
+  Function RBrush(Const S:String; n:Byte):String;
+    Begin
+      Result := Pad('L',S,n,#32)
+    End;
+
+  Function CBrush(Const S:String; n:Byte):String;
+    Begin
+      Result := Pad('C',S,n,#32)
+    End;
+
+  Function Fill(Const c:Char; n:Integer):String;
+    Begin
+      Result := '';
+      While Length(Result) < n Do
+        Result := Result + c
+    End;
+

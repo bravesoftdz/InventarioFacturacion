@@ -1,0 +1,14 @@
+[Hints]
+Anadir_Producto=Añadir/Modificar productos, mensajes y/o servicios
+Anadir_Proveedor=Añadir/Modificar proveedores
+Anadir_Terminos=Añadir/Modificar terminos de facturación
+Buscar=Buscar un registro previamente guardado
+Definir_Departamento=Añadir/Modificar departamentos
+Guardar=Guardar los datos actuales
+Imprimir=Imprimir Recibo
+Nuevo=Añadir un registro Nuevo
+Eliminar=Elimina de los archivos el registro actual
+Salir=Salir de esta pantalla
+Fecha=Fecha Actual
+Hora=Hora Actual
+Estado_Cuenta=Balance general y Resumen de las Facturas, Pagos y notas de crédito de la persona o compañía actual

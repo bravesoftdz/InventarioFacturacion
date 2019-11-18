@@ -1,0 +1,45 @@
+                MOLE GYM                
+             Villa Hermosa              
+Fecha    : 27Tel.: (809) 8Hora  :       
+Condici¢n: In             Vence :       
+Factura #: F00000000NCF # :             
+Seleccione el Tipo de Comprobante Fiscal
+ 
+             F A C T U R A              
+ 
+Nombre   : CLIENTE DE CONTADO           
+Direccion: LA ROMANA                    
+Telefono : (809) 000-0000               
+----------------------------------------
+Codigo      Descripcion                 
+----------------------------------------
+CUOTAS      VALOR DE CUOTAS DE CLIENTE  
+INSCRIPCION MONTO DE INSCRIPCION DE CLIE
+..............Ultima Linea..............
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+----------------------------------------
+SubTotal:    Descuento:   Impuesto  :   
+Pagado  :    Pendiente:   Total Neto:   
+Recibido:    Devuelto :   ==============
+ 
+____________________      ______________
+ Recibido Por             Entregado Por 
+           Le Atendi¢ : GUMBS           
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
