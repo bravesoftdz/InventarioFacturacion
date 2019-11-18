@@ -1,0 +1,940 @@
+Function ImprimirRecibo(Const OutDevice : String;Const Desglozar : Boolean) : Boolean;
+  Var
+    Duplex              : Boolean;
+    Factor              : Byte;
+    LineasDespues       ,
+    I                   : Integer;
+    Salida              ,
+    Impresora           ,
+    Coment_Enc          ,
+    Coment_Pie1         ,
+    Coment_Pie2         ,
+    Coment_Pie3         ,
+    Coment_Pie4         ,
+    RNC                 ,
+    Format_Num_Tel_Hora ,
+    Format_Fecha        ,
+    Separador           ,
+    A,C                 ,
+    NumSize             : String;
+  Begin
+    {Leer el Tipo de Impresora a Utilizar}
+    RegInfo.CloseKey;
+    RegInfo.OpenKey(_FacturaProductosKey,False);
+
+    Impresora           := RegInfo.ReadString(_Printer);
+    AnchoLinea          := RegInfo.ReadInteger(_LineWidth);
+    Coment_Enc          := RegInfo.ReadString(_Enc_Coment);
+    Coment_Pie1         := RegInfo.ReadString(_Foot_Coment1);
+    Coment_Pie2         := RegInfo.ReadString(_Foot_Coment2);
+    Coment_Pie3         := RegInfo.ReadString(_Foot_Coment3);
+    Separador           := RegInfo.ReadString(_LineSeparator);
+    Format_Num_Tel_Hora := RegInfo.ReadString(_Format_NPH);
+    Format_Fecha        := RegInfo.ReadString(_DateFormat);
+    NumSize             := RegInfo.ReadString(_Num_Size);
+    LineasDespues       := RegInfo.ReadInteger(_LinesAfter);
+    Salida              := RegInfo.ReadString(_Salida);
+    Duplex              := RegInfo.ReadBool(_Duplex);
+
+    RegInfo.CloseKey;
+    RegInfo.OpenKey(_GeneralConfigKey,False);
+    Format_Fecha := RegInfo.ReadString(Trim(Format_Fecha));
+
+    SetPrinterCodes(Impresora);
+
+    Factor := 1;
+    If OutDevice = _Port Then Factor := 2;
+
+    BeginPrn(OutDevice,Salida);
+
+    {Encabezado}
+    If Ps <> 0 Then
+      Begin
+        If OutDevice = _Port Then
+          Begin
+            Prn(_Init);
+            Prn(_BigFont);
+            Prn(_WBigFont);
+          End;
+
+        RegInfo.CloseKey;
+        RegInfo.OpenKey(_CompanyInfoKey,False);
+        RNC := UnEncrypt(RegInfo.ReadString(_UserCompRNC));
+
+        // Nombre
+        If Duplex Then
+          Prn(CBrush(UnEncrypt(RegInfo.ReadString(_UserCompName)),AnchoLinea Div Factor));
+
+        PrnLn(CBrush(UnEncrypt(RegInfo.ReadString(_UserCompName)),AnchoLinea Div Factor));
+
+        If OutDevice = _Port Then Prn(_NoBigFont);
+
+        // Comentario / Slogan
+        If Trim(Coment_Enc) <> '' Then
+          Begin
+            If Duplex Then
+              Prn(CBrush(Coment_Enc,AnchoLinea));
+              PrnLn(CBrush(Coment_Enc,AnchoLinea))
+            End;
+
+        // Direccion
+        If Duplex Then
+          Prn(CBrush(UnEncrypt(RegInfo.ReadString(_UserCompAddres)),AnchoLinea));
+        PrnLn(CBrush(UnEncrypt(RegInfo.ReadString(_UserCompAddres)),AnchoLinea));
+
+        // RNC
+        If Trim(RNC) <> '' Then
+          Begin
+            If Duplex Then
+              Prn(CBrush(RNC,AnchoLinea));
+            PrnLn(CBrush(RNC,AnchoLinea))
+          End;
+
+        // NCF
+        If Trim(Modulo.tFacturasNCF.Value) <> '' Then
+          Begin
+            If Duplex Then
+              Prn(CBrush('NCF : ' + Modulo.tFacturasNCF.Value,AnchoLinea));
+            PrnLn(CBrush('NCF : ' + Modulo.tFacturasNCF.Value,AnchoLinea));
+
+            If Duplex Then
+              Prn(CBrush(Modulo.tFacturasDescripcion_NCF.Value,AnchoLinea));
+            PrnLn(CBrush(Modulo.tFacturasDescripcion_NCF.Value,AnchoLinea));
+
+            PrnLn(#32)
+          End
+      End;
+
+      // # Recibo , Telefono y Hora de Venta
+      If Duplex Then
+        Prn(LBrush(LBrush(FormatDateTime('dd/mm/yyyy',Modulo.tFacturasFecha.Value),12) +
+                   CBrush(UnEncrypt(RegInfo.ReadString(_UserCompPhone1)),14)+
+                   RBrush(FormatDateTime('hh:mm am/pm',Modulo.tFacturasHora.Value),12),AnchoLinea));
+
+      PrnLn(LBrush(FormatDateTime('dd/mm/yyyy',Modulo.tFacturasFecha.Value),12) +
+            CBrush(UnEncrypt(RegInfo.ReadString(_UserCompPhone1)),14)+
+            RBrush(FormatDateTime('hh:mm am/pm',Modulo.tFacturasHora.Value),12));
+
+      If Duplex Then
+        Prn(LBrush(LBrush(Format('Condic.: %s',[Modulo.tFacturasCondicion.Value]),AnchoLinea Div 2) +
+                   LBrush(FormatDateTime('"Vence :" dd/mmm/yyyy',Modulo.tFacturasVencimiento.Value),AnchoLinea Div 2),AnchoLinea));
+
+      PrnLn(LBrush(Format('Condic.: %s',[Modulo.tFacturasCondicion.Value]),AnchoLinea Div 2) +
+            LBrush(FormatDateTime('"Vence :" dd/mmm/yyyy',Modulo.tFacturasVencimiento.Value),AnchoLinea Div 2));
+
+      {Tipo de Recibo}
+      If OutDevice = _Port Then Prn(_BigFont);
+
+      If Duplex Then
+        Prn(CBrush(UPPERCASE(Format('FACTURA %s',[Modulo.tFacturasNumero.Text])),(AnchoLinea Div Factor)));
+
+      PrnLn(CBrush(UPPERCASE(Format('FACTURA %s',[Modulo.tFacturasNumero.Text])),(AnchoLinea Div Factor)));
+
+      {PrnLn(CBrush(UPPERCASE('FACTURA'),(AnchoLinea Div (Factor * 2)))+
+             CBrush(Modulo.tFacturasNumero.Text,(AnchoLinea Div (Factor * 2))));}
+
+    If OutDevice = _Port Then Prn(_NoBigFont);
+
+    PrnLn(#32);
+
+    If OutDevice = _Port Then
+      Begin
+        Prn(_NoBigFont);
+        Prn(_Draft)
+      End;
+
+    {Cuerpo de la Factura}
+    If Duplex Then
+      Prn(LBrush('Nombre   : '+Trim(Modulo.tFacturasNombre_Cliente.Value),AnchoLinea));
+
+    PrnLn(LBrush('Nombre   : '+Trim(Modulo.tFacturasNombre_Cliente.Value),AnchoLinea));
+
+    If Duplex Then
+      Prn(LBrush('Direccion: '+Modulo.tListado_ClientesDireccion.Value,AnchoLinea));
+
+    PrnLn(LBrush('Direccion: '+Modulo.tListado_ClientesDireccion.Value,AnchoLinea));
+
+    If Duplex Then
+      Prn(LBrush('Telefono : '+Modulo.tListado_ClientesNumero_Telefono_1.Value,AnchoLinea));
+
+    PrnLn(LBrush('Telefono : '+Modulo.tListado_ClientesNumero_Telefono_1.Value,AnchoLinea));
+
+    If Duplex Then
+      Prn(Fill('-',AnchoLinea));
+
+    PrnLn(Fill('-',AnchoLinea));
+
+    If Duplex Then
+      Prn(LBrush(CBrush('Cant'        ,04)+
+                 CBrush('Descripcion' ,18)+
+                 CBrush('Precio'      ,08)+
+                 CBrush('Total'       ,10),AnchoLinea));
+
+    Prnln(LBrush(CBrush('Cant'        ,04)+
+                 CBrush('Descripcion' ,18)+
+                 CBrush('Precio'      ,08)+
+                 CBrush('Total'       ,10),AnchoLinea));
+
+    If Duplex Then
+      Prn(Fill('-',AnchoLinea));
+
+    PrnLn(Fill('-',AnchoLinea));
+
+    Modulo.tDetalles_Factura.First;
+    While Not Modulo.tDetalles_Factura.EOF Do
+       Begin
+         If Duplex Then
+           Prn(LBrush(LBrush(Format('%*.*f',[8,0,Modulo.tDetalles_FacturaCantidad.Value])     ,04)+
+                      LBrush(Modulo.tDetalles_FacturaDescripcion.Value                        ,18)+
+                      RBrush(Format('%*.*f',[8,1,Modulo.tDetalles_FacturaPrecio_Venta.Value]) ,08)+
+                      RBrush(Format('%*.*f',[8,1,Modulo.tDetalles_FacturaTotal_Precio.Value]) ,09)+' ',AnchoLinea));
+
+         Prnln(LBrush(LBrush(Format('%*.*f',[8,0,Modulo.tDetalles_FacturaCantidad.Value])     ,04)+
+                      LBrush(Modulo.tDetalles_FacturaDescripcion.Value                        ,18)+
+                      RBrush(Format('%*.*f',[8,1,Modulo.tDetalles_FacturaPrecio_Venta.Value]) ,08)+
+                      RBrush(Format('%*.*f',[8,1,Modulo.tDetalles_FacturaTotal_Precio.Value]) ,09)+' ',AnchoLinea));
+
+         Modulo.tDetalles_Factura.Next;
+       End; {While}
+
+    {Sumario / Totales de la Factura}
+    If Duplex Then
+      Prn(Fill('-',AnchoLinea));
+
+    PrnLn(Fill('-',AnchoLinea));
+
+    If Desglozar And (Ps <> 0) Then
+      Begin
+        If Duplex Then
+          Prn(RBrush(RBrush('SubTotal:',AnchoLinea - 12) +
+                     RBrush(Format('%m',[Modulo.tFacturasSubTotal.Value]),12),AnchoLinea-1));
+
+        PrnLn(RBrush('SubTotal:',AnchoLinea - 12) + RBrush(Format('%m',[Modulo.tFacturasSubTotal.Value]),12));
+
+        If Duplex Then
+          Prn(RBrush(RBrush('Total Impuesto:',AnchoLinea - 12) +
+                     RBrush(Format('%m',[Modulo.tFacturasTotal_Impuesto.Value]),12),AnchoLinea-1));
+
+        PrnLn(RBrush('Total Impuesto:',AnchoLinea - 12) + RBrush(Format('%m',[Modulo.tFacturasTotal_Impuesto.Value]),12));
+
+        If Duplex Then
+          Prn(RBrush(RBrush('Total Descuento:',AnchoLinea - 12) +
+                     RBrush(Format('%m',[Modulo.tFacturasTotal_Descuento.Value]),12),AnchoLinea-1));
+
+        PrnLn(RBrush('Total Descuento:',AnchoLinea - 12) + RBrush(Format('%m',[Modulo.tFacturasTotal_Descuento.Value]),12));
+
+        If Duplex Then
+          Prn(RBrush(Fill('-',AnchoLinea Div 2),AnchoLinea));
+
+        PrnLn(RBrush(Fill('-',AnchoLinea Div 2),AnchoLinea));
+      End;
+
+    // Total Factura
+    If Duplex Then
+      Prn(RBrush(RBrush('Total Neto:',AnchoLinea - 12) +
+                 RBrush(Format('%m',[Modulo.tFacturasTotalNeto.Value]),12),AnchoLinea-1));
+
+    PrnLn(RBrush('Total Neto:',AnchoLinea - 12) +
+          RBrush(Format('%m',[Modulo.tFacturasTotalNeto.Value]),12));
+
+    If Duplex Then
+      Prn(RBrush(Fill('=',AnchoLinea Div 2),AnchoLinea));
+
+    PrnLn(RBrush(Fill('=',AnchoLinea Div 2),AnchoLinea));
+
+    // Efectivo Recibido
+    If Duplex Then
+      Prn(RBrush(RBrush('Efectivo Recibido:',AnchoLinea - 12) +
+                 RBrush(Format('%m',[Modulo.tFacturasTotal_Efectivo_Recibido.Value]),12),AnchoLinea-1));
+
+    PrnLn(RBrush('Efectivo Recibido:',AnchoLinea - 12) +
+          RBrush(Format('%m',[Modulo.tFacturasTotal_Efectivo_Recibido.Value]),12));
+
+    // Efectivo Devuelto
+    If Duplex Then
+      Prn(RBrush(RBrush('Efectivo Devuelto:',AnchoLinea - 12) +
+                 RBrush(Format('%m',[Modulo.tFacturasTotal_Efectivo_Devuelto.Value]),12),AnchoLinea-1));
+
+    PrnLn(RBrush('Efectivo Devuelto:',AnchoLinea - 12) +
+          RBrush(Format('%m',[Modulo.tFacturasTotal_Efectivo_Devuelto.Value]),12));
+
+
+    PrnLn(#32);
+
+    If Desglozar Then
+      Begin
+        If Duplex Then
+          Prn(RBrush(RBrush('Pagado:',AnchoLinea - 12) +
+                     RBrush(Format('%m',[Modulo.tFacturasPagado.Value]),12),AnchoLinea-1));
+
+        PrnLn(RBrush('Pagado:',AnchoLinea - 12) + RBrush(Format('%m',[Modulo.tFacturasPagado.Value]),12));
+
+        If Duplex Then
+          Prn(RBrush(RBrush('Pendiente:',AnchoLinea - 12) +
+                     RBrush(Format('%m',[Modulo.tFacturasPendiente.Value]),12),AnchoLinea-1));
+
+        PrnLn(RBrush('Pendiente:',AnchoLinea - 12) + RBrush(Format('%m',[Modulo.tFacturasPendiente.Value]),12));
+      End;
+
+    If OutDevice = _Port Then
+      Begin
+        Prn(_NoBigFont);
+        Prn(_Draft)
+      End;
+    PrnLn(#32);
+    PrnLn(#32);
+
+    // Comentario
+    C := Modulo.tFacturasComentario.Value;
+    I := Length(C);
+    While I > 0 Do
+      Begin
+        A := LBrush (Copy(C,1,AnchoLinea),AnchoLinea);
+        PrnLn(A);
+        Delete(C,1,AnchoLinea);
+        I := Length(C)
+      End;
+
+    PrnLn(#32);
+    PrnLn(#32);
+    If Duplex Then
+      Prn(CBrush(Fill('_',20)+Fill(' ',2)+Fill('_',20),AnchoLinea));
+
+    PrnLn(CBrush(Fill('_',20)+Fill(' ',2)+Fill('_',20),AnchoLinea));
+
+    If Duplex Then
+      Prn(CBrush('Entregado Por',20) +
+            Fill(' ',2)+
+          CBrush('Recibido Por',20));
+
+    PrnLn(CBrush('Entregado Por',20) +
+            Fill(' ',2)+
+          CBrush('Recibido Por',20));
+
+    If Trim(Coment_Pie1) <> '' Then
+      Begin
+        If Duplex Then
+          Prn(CBrush(Coment_Pie1,AnchoLinea));
+
+        PrnLn(CBrush(Coment_Pie1,AnchoLinea))
+      End;
+
+    If Trim(Coment_Pie2) <> '' Then
+      Begin
+        If Duplex Then
+          Prn(CBrush(Coment_Pie2,AnchoLinea));
+
+        PrnLn(CBrush(Coment_Pie2,AnchoLinea))
+      End;
+
+    If Trim(Coment_Pie3) <> '' Then
+      Begin
+        If Duplex Then
+          Prn(CBrush(Coment_Pie3,AnchoLinea));
+
+        PrnLn(CBrush(Coment_Pie3,AnchoLinea))
+      End;
+
+    If Trim(Coment_Pie4) <> '' Then
+      Begin
+        If Duplex Then
+          Prn(CBrush(Coment_Pie4,AnchoLinea));
+
+        PrnLn(CBrush(Coment_Pie4,AnchoLinea))
+      End;
+
+    If Ps <> 0 Then
+      Begin
+        If Duplex Then
+           Prn(CBrush('Le Atendió : ' + Modulo.tFacturasUsuario.Value,AnchoLinea));
+
+        PrnLn(CBrush('Le Atendió : ' + Modulo.tFacturasUsuario.Value,AnchoLinea))
+      End;
+
+    For I := 1 To LineasDespues Do
+      PrnLn(#32);
+
+    If OutDevice = _Port Then
+      PrnLn(_PartialCut);
+
+    EndPrn;
+    Result := True
+  End;
+
+Function ImprimirAutorizacion(Const OutDevice : String;Const Desglozar : Boolean) : Boolean;
+  Var
+    Duplex              : Boolean;
+    Factor              : Byte;
+    LineasDespues       ,
+    I                   : Integer;
+    Salida              ,
+    Impresora           ,
+    Coment_Enc          ,
+    Coment_Pie1         ,
+    Coment_Pie2         ,
+    Coment_Pie3         ,
+    Coment_Pie4         ,
+    RNC                 ,
+    Format_Num_Tel_Hora ,
+    Format_Fecha        ,
+    Separador           ,
+    A,C                 ,
+    NumSize             : String;
+  Begin
+    {Leer el Tipo de Impresora a Utilizar}
+    RegInfo.CloseKey;
+    RegInfo.OpenKey(_FacturaProductosKey,False);
+
+    Impresora           := RegInfo.ReadString(_Printer);
+    AnchoLinea          := RegInfo.ReadInteger(_LineWidth);
+    Coment_Enc          := RegInfo.ReadString(_Enc_Coment);
+    Coment_Pie1         := RegInfo.ReadString(_Foot_Coment1);
+    Coment_Pie2         := RegInfo.ReadString(_Foot_Coment2);
+    Coment_Pie3         := RegInfo.ReadString(_Foot_Coment3);
+    Separador           := RegInfo.ReadString(_LineSeparator);
+    Format_Num_Tel_Hora := RegInfo.ReadString(_Format_NPH);
+    Format_Fecha        := RegInfo.ReadString(_DateFormat);
+    NumSize             := RegInfo.ReadString(_Num_Size);
+    LineasDespues       := RegInfo.ReadInteger(_LinesAfter);
+    Salida              := RegInfo.ReadString(_Salida);
+    Duplex              := RegInfo.ReadBool(_Duplex);
+
+    RegInfo.CloseKey;
+    RegInfo.OpenKey(_GeneralConfigKey,False);
+    Format_Fecha := RegInfo.ReadString(Trim(Format_Fecha));
+
+    SetPrinterCodes(Impresora);
+
+    Factor := 1;
+    If OutDevice = _Port Then Factor := 2;
+
+    BeginPrn(OutDevice,Salida);
+
+    {Encabezado}
+    If Ps <> 0 Then
+      Begin
+        If OutDevice = _Port Then
+          Begin
+            Prn(_Init);
+            Prn(_BigFont);
+            Prn(_WBigFont);
+          End;
+
+        RegInfo.CloseKey;
+        RegInfo.OpenKey(_CompanyInfoKey,False);
+
+        // Nombre
+        If Duplex Then
+          Prn(CBrush('AUTORIZACION DE COBRO',AnchoLinea Div Factor));
+
+        PrnLn(CBrush('AUTORIZACION DE COBRO',AnchoLinea Div Factor));
+
+        If OutDevice = _Port Then Prn(_NoBigFont);
+
+      End;
+
+      // # Recibo , Telefono y Hora de Venta
+      If Duplex Then
+        Prn(LBrush(LBrush(FormatDateTime('dd/mm/yyyy',Modulo.tFacturasFecha.Value),12) +
+                   CBrush(UnEncrypt(RegInfo.ReadString(_UserCompPhone1)),14)+
+                   RBrush(FormatDateTime('hh:mm am/pm',Modulo.tFacturasHora.Value),12),AnchoLinea));
+
+      PrnLn(LBrush(FormatDateTime('dd/mm/yyyy',Modulo.tFacturasFecha.Value),12) +
+            CBrush(UnEncrypt(RegInfo.ReadString(_UserCompPhone1)),14)+
+            RBrush(FormatDateTime('hh:mm am/pm',Modulo.tFacturasHora.Value),12));
+
+      If Duplex Then
+        Prn(LBrush(LBrush(Format('Condic.: %s',[Modulo.tFacturasCondicion.Value]),AnchoLinea Div 2) +
+                   LBrush(FormatDateTime('"Vence :" dd/mmm/yyyy',Modulo.tFacturasVencimiento.Value),AnchoLinea Div 2),AnchoLinea));
+
+      PrnLn(LBrush(Format('Condic.: %s',[Modulo.tFacturasCondicion.Value]),AnchoLinea Div 2) +
+            LBrush(FormatDateTime('"Vence :" dd/mmm/yyyy',Modulo.tFacturasVencimiento.Value),AnchoLinea Div 2));
+
+      {Tipo de Recibo}
+      If OutDevice = _Port Then Prn(_BigFont);
+
+      If Duplex Then
+        Prn(CBrush(UPPERCASE(Format('FACTURA %s',[Modulo.tFacturasNumero.Text])),(AnchoLinea Div Factor)));
+
+      PrnLn(CBrush(UPPERCASE(Format('FACTURA %s',[Modulo.tFacturasNumero.Text])),(AnchoLinea Div Factor)));
+
+      {PrnLn(CBrush(UPPERCASE('FACTURA'),(AnchoLinea Div (Factor * 2)))+
+             CBrush(Modulo.tFacturasNumero.Text,(AnchoLinea Div (Factor * 2))));}
+
+    If OutDevice = _Port Then Prn(_NoBigFont);
+
+    PrnLn(#32);
+
+    If OutDevice = _Port Then
+      Begin
+        Prn(_NoBigFont);
+        Prn(_Draft)
+      End;
+
+    {Cuerpo de la Factura}
+    If Duplex Then
+      Prn(LBrush('Nombre   : '+Trim(Modulo.tFacturasNombre_Cliente.Value),AnchoLinea));
+
+    PrnLn(LBrush('Nombre   : '+Trim(Modulo.tFacturasNombre_Cliente.Value),AnchoLinea));
+
+    If Duplex Then
+      Prn(LBrush('Direccion: '+Modulo.tListado_ClientesDireccion.Value,AnchoLinea));
+
+    PrnLn(LBrush('Direccion: '+Modulo.tListado_ClientesDireccion.Value,AnchoLinea));
+
+    If Duplex Then
+      Prn(LBrush('Telefono : '+Modulo.tListado_ClientesNumero_Telefono_1.Value,AnchoLinea));
+
+    PrnLn(LBrush('Telefono : '+Modulo.tListado_ClientesNumero_Telefono_1.Value,AnchoLinea));
+
+    If Duplex Then
+      Prn(Fill('-',AnchoLinea));
+
+    PrnLn(Fill('-',AnchoLinea));
+
+    If Duplex Then
+      Prn(LBrush(CBrush('Cant'        ,04)+
+                 CBrush('Descripcion' ,18)+
+                 CBrush('Precio'      ,08)+
+                 CBrush('Total'       ,10),AnchoLinea));
+
+    Prnln(LBrush(CBrush('Cant'        ,04)+
+                 CBrush('Descripcion' ,18)+
+                 CBrush('Precio'      ,08)+
+                 CBrush('Total'       ,10),AnchoLinea));
+
+    If Duplex Then
+      Prn(Fill('-',AnchoLinea));
+
+    PrnLn(Fill('-',AnchoLinea));
+
+    Modulo.tDetalles_Factura.First;
+    While Not Modulo.tDetalles_Factura.EOF Do
+       Begin
+         If Duplex Then
+           Prn(LBrush(LBrush(Format('%*.*f',[8,0,Modulo.tDetalles_FacturaCantidad.Value])     ,04)+
+                      LBrush(Modulo.tDetalles_FacturaDescripcion.Value                        ,18)+
+                      RBrush(Format('%*.*f',[8,1,Modulo.tDetalles_FacturaPrecio_Venta.Value]) ,08)+
+                      RBrush(Format('%*.*f',[8,1,Modulo.tDetalles_FacturaTotal_Precio.Value]) ,09)+' ',AnchoLinea));
+
+         Prnln(LBrush(LBrush(Format('%*.*f',[8,0,Modulo.tDetalles_FacturaCantidad.Value])     ,04)+
+                      LBrush(Modulo.tDetalles_FacturaDescripcion.Value                        ,18)+
+                      RBrush(Format('%*.*f',[8,1,Modulo.tDetalles_FacturaPrecio_Venta.Value]) ,08)+
+                      RBrush(Format('%*.*f',[8,1,Modulo.tDetalles_FacturaTotal_Precio.Value]) ,09)+' ',AnchoLinea));
+
+         Modulo.tDetalles_Factura.Next;
+       End; {While}
+
+    {Sumario / Totales de la Factura}
+    If Duplex Then
+      Prn(Fill('-',AnchoLinea));
+
+    PrnLn(Fill('-',AnchoLinea));
+
+    If Desglozar And (Ps <> 0) Then
+      Begin
+        If Duplex Then
+          Prn(RBrush(RBrush('SubTotal:',AnchoLinea - 12) +
+                     RBrush(Format('%m',[Modulo.tFacturasSubTotal.Value]),12),AnchoLinea-1));
+
+        PrnLn(RBrush('SubTotal:',AnchoLinea - 12) + RBrush(Format('%m',[Modulo.tFacturasSubTotal.Value]),12));
+
+        If Duplex Then
+          Prn(RBrush(RBrush('Total Impuesto:',AnchoLinea - 12) +
+                     RBrush(Format('%m',[Modulo.tFacturasTotal_Impuesto.Value]),12),AnchoLinea-1));
+
+        PrnLn(RBrush('Total Impuesto:',AnchoLinea - 12) + RBrush(Format('%m',[Modulo.tFacturasTotal_Impuesto.Value]),12));
+
+        If Duplex Then
+          Prn(RBrush(RBrush('Total Descuento:',AnchoLinea - 12) +
+                     RBrush(Format('%m',[Modulo.tFacturasTotal_Descuento.Value]),12),AnchoLinea-1));
+
+        PrnLn(RBrush('Total Descuento:',AnchoLinea - 12) + RBrush(Format('%m',[Modulo.tFacturasTotal_Descuento.Value]),12));
+
+        If Duplex Then
+          Prn(RBrush(Fill('-',AnchoLinea Div 2),AnchoLinea));
+
+        PrnLn(RBrush(Fill('-',AnchoLinea Div 2),AnchoLinea));
+      End;
+
+    // Total Factura
+    If Duplex Then
+      Prn(RBrush(RBrush('Total Neto:',AnchoLinea - 12) +
+                 RBrush(Format('%m',[Modulo.tFacturasTotalNeto.Value]),12),AnchoLinea-1));
+
+    PrnLn(RBrush('Total Neto:',AnchoLinea - 12) +
+          RBrush(Format('%m',[Modulo.tFacturasTotalNeto.Value]),12));
+
+    If Duplex Then
+      Prn(RBrush(Fill('=',AnchoLinea Div 2),AnchoLinea));
+
+    PrnLn(RBrush(Fill('=',AnchoLinea Div 2),AnchoLinea));
+
+    // Efectivo Recibido
+    If Duplex Then
+      Prn(RBrush(RBrush('Efectivo Recibido:',AnchoLinea - 12) +
+                 RBrush(Format('%m',[Modulo.tFacturasTotal_Efectivo_Recibido.Value]),12),AnchoLinea-1));
+
+    PrnLn(RBrush('Efectivo Recibido:',AnchoLinea - 12) +
+          RBrush(Format('%m',[Modulo.tFacturasTotal_Efectivo_Recibido.Value]),12));
+
+    // Efectivo Devuelto
+    If Duplex Then
+      Prn(RBrush(RBrush('Efectivo Devuelto:',AnchoLinea - 12) +
+                 RBrush(Format('%m',[Modulo.tFacturasTotal_Efectivo_Devuelto.Value]),12),AnchoLinea-1));
+
+    PrnLn(RBrush('Efectivo Devuelto:',AnchoLinea - 12) +
+          RBrush(Format('%m',[Modulo.tFacturasTotal_Efectivo_Devuelto.Value]),12));
+
+
+    PrnLn(#32);
+
+    If Desglozar Then
+      Begin
+        If Duplex Then
+          Prn(RBrush(RBrush('Pagado:',AnchoLinea - 12) +
+                     RBrush(Format('%m',[Modulo.tFacturasPagado.Value]),12),AnchoLinea-1));
+
+        PrnLn(RBrush('Pagado:',AnchoLinea - 12) + RBrush(Format('%m',[Modulo.tFacturasPagado.Value]),12));
+
+        If Duplex Then
+          Prn(RBrush(RBrush('Pendiente:',AnchoLinea - 12) +
+                     RBrush(Format('%m',[Modulo.tFacturasPendiente.Value]),12),AnchoLinea-1));
+
+        PrnLn(RBrush('Pendiente:',AnchoLinea - 12) + RBrush(Format('%m',[Modulo.tFacturasPendiente.Value]),12));
+      End;
+
+    If OutDevice = _Port Then
+      Begin
+        Prn(_NoBigFont);
+        Prn(_Draft)
+      End;
+    PrnLn(#32);
+    PrnLn(#32);
+
+    // Comentario
+    C := Modulo.tFacturasComentario.Value;
+    I := Length(C);
+    While I > 0 Do
+      Begin
+        A := LBrush (Copy(C,1,AnchoLinea),AnchoLinea);
+        PrnLn(A);
+        Delete(C,1,AnchoLinea);
+        I := Length(C)
+      End;
+
+    PrnLn(#32);
+    PrnLn(#32);
+    If Duplex Then
+      Prn(CBrush(Fill('_',20)+Fill(' ',2)+Fill('_',20),AnchoLinea));
+
+    PrnLn(CBrush(Fill('_',20)+Fill(' ',2)+Fill('_',20),AnchoLinea));
+
+    If Duplex Then
+      Prn(CBrush('Nombre',20) +
+            Fill(' ',2)+
+          CBrush('Cedula',20));
+
+    PrnLn(CBrush('Nombre',20) +
+            Fill(' ',2)+
+          CBrush('Cedula',20));
+
+    If Duplex Then
+      Prn(CBrush(Modulo.tListado_ClientesLugar_Trabajo.Value,AnchoLinea));
+
+    PrnLn(CBrush(Modulo.tListado_ClientesLugar_Trabajo.Value,AnchoLinea));
+
+    PrnLn(#32);
+    
+    If Trim(Coment_Pie1) <> '' Then
+      Begin
+        If Duplex Then
+          Prn(CBrush(Coment_Pie1,AnchoLinea));
+
+        PrnLn(CBrush(Coment_Pie1,AnchoLinea))
+      End;
+
+    If Trim(Coment_Pie2) <> '' Then
+      Begin
+        If Duplex Then
+          Prn(CBrush(Coment_Pie2,AnchoLinea));
+
+        PrnLn(CBrush(Coment_Pie2,AnchoLinea))
+      End;
+
+    If Trim(Coment_Pie3) <> '' Then
+      Begin
+        If Duplex Then
+          Prn(CBrush(Coment_Pie3,AnchoLinea));
+
+        PrnLn(CBrush(Coment_Pie3,AnchoLinea))
+      End;
+
+    If Trim(Coment_Pie4) <> '' Then
+      Begin
+        If Duplex Then
+          Prn(CBrush(Coment_Pie4,AnchoLinea));
+
+        PrnLn(CBrush(Coment_Pie4,AnchoLinea))
+      End;
+
+    If Ps <> 0 Then
+      Begin
+        If Duplex Then
+           Prn(CBrush('Le Atendió : ' + Modulo.tFacturasUsuario.Value,AnchoLinea));
+
+        PrnLn(CBrush('Le Atendió : ' + Modulo.tFacturasUsuario.Value,AnchoLinea))
+      End;
+
+    For I := 1 To LineasDespues Do
+      PrnLn(#32);
+
+    If OutDevice = _Port Then
+      PrnLn(_PartialCut);
+
+    EndPrn;
+    Result := True
+  End;
+
+  Function ImprimirFactura(Const OutDevice : String;Const Desglozar : Boolean) : Boolean;
+  Var
+    Factor              : Byte;
+    Alineacion          ,
+    LineasDespues       ,
+    LineaActual         ,
+    LineasDetalle       ,
+    LineasFormulario    ,
+    Modular             ,
+    I                   : Integer;
+    Salida              ,
+    Impresora           ,
+    A, B, C             ,
+    RNC                 ,
+    Format_Num_Tel_Hora ,
+    Format_Fecha        ,
+    Separador           ,
+    NumSize             : String;
+
+    Procedure ImprimirEtiquetas;
+      Begin
+        PrnLn(Fill('-',AnchoLinea));
+        If OutDevice = _Port Then Prn(_Bold);
+        Prnln(LBrush(LBrush('Codigo'      ,12)+
+                     LBrush('Descripcion' ,30)+
+                     LBrush('Cant'        ,05)+
+                     RBrush('Precio'      ,11)+
+                     RBrush('Desc.'       ,10)+
+                     RBrush('Total'       ,12),AnchoLinea));
+        If OutDevice = _Port Then
+          Begin
+            Prn(_NoBold);
+            Prn(_Draft);
+          End;
+
+        PrnLn(Fill('-',AnchoLinea))
+      End;
+
+  Begin
+    {Leer el Tipo de Impresora a Utilizar}
+    RegInfo.CloseKey;
+    RegInfo.OpenKey(_FacturaProductosKey,False);
+
+    Impresora           := RegInfo.ReadString(_Printer);
+    AnchoLinea          := RegInfo.ReadInteger(_LineWidth);
+    Separador           := RegInfo.ReadString(_LineSeparator);
+    Format_Num_Tel_Hora := RegInfo.ReadString(_Format_NPH);
+    Format_Fecha        := RegInfo.ReadString(_DateFormat);
+    NumSize             := RegInfo.ReadString(_Num_Size);
+    LineasDespues       := RegInfo.ReadInteger(_LinesAfter);
+    Salida              := RegInfo.ReadString(_Salida);
+    Alineacion          := RegInfo.ReadInteger(_Alignment);
+    LineasFormulario    := Trunc(RegInfo.ReadFloat (_FormLines));
+    Modular             := AnchoLinea Mod 3;
+
+    RegInfo.CloseKey;
+    RegInfo.OpenKey(_GeneralConfigKey,False);
+    Format_Fecha := RegInfo.ReadString(Trim(Format_Fecha));
+
+    SetPrinterCodes(Impresora);
+
+    Factor := 1;
+    If OutDevice = _Port Then Factor := 2;
+
+    BeginPrn(OutDevice,Salida);
+
+    {Encabezado}
+    If Ps <> 0 Then
+      Begin
+        If OutDevice = _Port Then
+          Begin
+            Prn(_Init);
+            Prn(_BigFont);
+            Prn(_WBigFont);
+          End;
+
+        RegInfo.CloseKey;
+        RegInfo.OpenKey(_CompanyInfoKey,False);
+        RNC := UnEncrypt(RegInfo.ReadString(_UserCompRNC));
+
+        // Nombre
+        Case Alineacion Of
+          0 : PrnLn(LBrush(UnEncrypt(RegInfo.ReadString(_UserCompName)),AnchoLinea Div Factor));
+          1 : PrnLn(RBrush(UnEncrypt(RegInfo.ReadString(_UserCompName)),AnchoLinea Div Factor));
+          2 : PrnLn(CBrush(UnEncrypt(RegInfo.ReadString(_UserCompName)),AnchoLinea Div Factor));
+        End; // Case
+
+        If OutDevice = _Port Then Prn(_NoBigFont);
+
+        // Direccion
+        Case Alineacion Of
+          0 : PrnLn(LBrush(UnEncrypt(RegInfo.ReadString(_UserCompAddres)),AnchoLinea));
+          1 : PrnLn(RBrush(UnEncrypt(RegInfo.ReadString(_UserCompAddres)),AnchoLinea));
+          2 : PrnLn(CBrush(UnEncrypt(RegInfo.ReadString(_UserCompAddres)),AnchoLinea));
+        End; // Case
+      End;
+
+    // # Recibo , Telefono y Hora de Venta
+    PrnLn(LBrush('Fecha    : ' + FormatDateTime(ShortDateFormat,Modulo.tFacturasFecha.Value),AnchoLinea Div 3) +
+          CBrush(UnEncrypt(RegInfo.ReadString(_UserCompPhone1)),AnchoLinea Div 3)+
+          RBrush('Hora  : ' + RBrush(Modulo.tFacturasHora.Text,18),(AnchoLinea Div 3) + Modular));
+
+    PrnLn(LBrush(Format('Condición: %s',[Modulo.tFacturasCondicion.Value]),AnchoLinea Div 3) +
+          CBrush(RNC,AnchoLinea Div 3)+
+          RBrush('Vence : ' + RBrush(Modulo.tFacturasVencimiento.Text,18),(AnchoLinea Div 3) + Modular));
+
+
+    // NCF y Numero Factura
+    PrnLn(LBrush(Format('Factura #: %s',[Modulo.tFacturasNumero.Text]),AnchoLinea Div 2) +
+          RBrush('NCF # :' + RBrush(Modulo.tFacturasNCF.Text,19),AnchoLinea Div 2));
+
+    PrnLn(CBrush(Modulo.tFacturasDescripcion_NCF.Text,AnchoLinea));
+    PrnLn(#32);
+    {Tipo de Recibo}
+    If OutDevice = _Port Then Prn(_BigFont);
+
+    PrnLn(CBrush(UPPERCASE('F A C T U R A'),(AnchoLinea Div Factor)));
+
+    PrnLn(#32);
+
+    If OutDevice = _Port Then
+      Begin
+        Prn(_NoBigFont);
+        Prn(_Normal);
+        Prn(_Draft)
+      End;
+
+    // Datos del Cliente
+    PrnLn(LBrush('Nombre   : '+Trim(Modulo.tFacturasNombre_Cliente.Value),AnchoLinea));
+    PrnLn(LBrush('Direccion: '+Modulo.tListado_ClientesDireccion.Value,AnchoLinea));
+    PrnLn(LBrush('Telefono : '+Modulo.tListado_ClientesNumero_Telefono_1.Value,AnchoLinea));
+
+    {Cuerpo de la Factura}
+
+    // Etiquetas
+    ImprimirEtiquetas;
+
+    // Detalle
+    LineaActual := 15;
+    LineasDetalle := LineasFormulario - LineaActual - 8; // los 6 son del pie de pagina
+
+    Modulo.tDetalles_Factura.First;
+
+    If Modulo.tDetalles_Factura.RecordCount > LineasDetalle Then
+      LineasDetalle := Modulo.tDetalles_Factura.RecordCount;
+
+    While Not Modulo.tDetalles_Factura.EOF Do
+       Begin
+         Prnln(LBrush(LBrush(Modulo.tDetalles_FacturaCodigo.Value                                ,12)+
+                      LBrush(Modulo.tDetalles_FacturaDescripcion.Value                           ,30)+
+                      LBrush(Format('%*.*f',[8,0,Modulo.tDetalles_FacturaCantidad.Value])        ,05)+
+                      RBrush(Format('%*.*f',[8,2,Modulo.tDetalles_FacturaPrecio_Venta.Value])    ,11)+
+                      RBrush(Format('%*.*f',[8,2,Modulo.tDetalles_FacturaTotal_Descuento.Value]) ,10)+
+                      RBrush(Format('%*.*f',[8,2,Modulo.tDetalles_FacturaTotal_Precio.Value])    ,12)+' ',AnchoLinea));
+         Inc(LineaActual);
+         If LineaActual > LineasFormulario Then LineaActual := 1;
+
+         Modulo.tDetalles_Factura.Next;
+       End; {While}
+
+    PrnLn(Pad('C','Ultima Linea',AnchoLinea,'.'));
+    Inc(LineaActual);
+
+    While LineaActual < LineasFormulario - 8 Do
+      Begin
+        Inc(LineaActual);
+        PrnLn (#32);
+      End;
+
+    {Sumario / Totales de la Factura}
+    PrnLn(Fill('-',AnchoLinea));
+
+    A := ' ';
+    B := ' ';
+    C := ' ';
+
+    // SubTotal, Impuesto y Descuento
+    If Desglozar And (Ps <> 0) Then
+      Begin
+        A := LBrush('SubTotal:' + RBrush(Format('%m',[Modulo.tFacturasSubTotal.Value]),12),AnchoLinea Div 3);
+        B := LBrush('Descuento:' + RBrush(Format('%m',[Modulo.tFacturasTotal_Descuento.Value]),12),AnchoLinea Div 3);
+        C := RBrush('Impuesto  :' + RBrush(Format('%m',[Modulo.tFacturasTotal_Impuesto.Value]),12),(AnchoLinea Div 3) + Modular);
+      End;
+
+    PrnLn(A + B + C);
+
+    // Total Factura, Pagado y Pendiente
+    A := RBrush(' ',AnchoLinea Div 3);
+    B := RBrush(' ',AnchoLinea Div 3);
+    C := RBrush('Total Neto:'+ RBrush(Format('%m',[Modulo.tFacturasTotalNeto.Value]),12),(AnchoLinea Div 3) + Modular);
+
+    If Desglozar Then
+      Begin
+        A := LBrush('Pagado  :' + RBrush(Format('%m',[Modulo.tFacturasPagado.Value]),12),AnchoLinea Div 3);
+        B := LBrush('Pendiente:' + RBrush(Format('%m',[Modulo.tFacturasPendiente.Value]),12),AnchoLinea Div 3);
+      End;
+
+    If OutDevice = _Port Then Prn(_Bold);
+    PrnLn(A + B + C);
+        If OutDevice = _Port Then
+          Begin
+            Prn(_NoBold);
+            Prn(_Draft);
+          End;
+
+    // Recibido y Devuelto
+    A := LBrush('Recibido:' + RBrush(Format('%m',[Modulo.tFacturasTotal_Efectivo_Recibido.Value]),12),AnchoLinea Div 3);
+    B := LBrush('Devuelto :' + RBrush(Format('%m',[Modulo.tFacturasTotal_Efectivo_Devuelto.Value]),12),AnchoLinea Div 3);
+    C := Fill('=',(AnchoLinea Div 3) + Modular);
+    PrnLn(A + B + C);
+
+    If OutDevice = _Port Then
+      Begin
+        Prn(_NoBigFont);
+        Prn(_Draft)
+      End;
+
+    // Comentario
+    C := Modulo.tFacturasComentario.Value;
+    I := Length(C);
+    While I > 0 Do
+      Begin
+        A := LBrush (Copy(C,1,AnchoLinea),AnchoLinea);
+        PrnLn(A);
+        Delete(C,1,AnchoLinea);
+        I := Length(C)
+      End;
+
+    PrnLn(#32);
+    PrnLn(CBrush(Fill('_',20)+Fill(' ',6)+Fill('_',20),AnchoLinea));
+    PrnLn(CBrush(CBrush('Recibido Por',20)+Fill(' ',6)+CBrush('Entregado Por',20),AnchoLinea));
+    PrnLn(CBrush('Le Atendió : ' + Modulo.tFacturasUsuario.Value,AnchoLinea));
+
+    For I := 1 To LineasDespues Do
+      PrnLn(#32);
+
+    For I := 0 To LineasDespues - 1 Do
+      PrnLn(#32);
+    EndPrn;
+    Result := True
+  End;
+

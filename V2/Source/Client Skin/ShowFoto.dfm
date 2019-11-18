@@ -1,0 +1,41 @@
+object fShowFoto: TfShowFoto
+  Left = 0
+  Top = 0
+  Caption = 'Foto'
+  ClientHeight = 491
+  ClientWidth = 538
+  Color = clBtnFace
+  Font.Charset = DEFAULT_CHARSET
+  Font.Color = clWindowText
+  Font.Height = -11
+  Font.Name = 'Tahoma'
+  Font.Style = []
+  OldCreateOrder = False
+  PixelsPerInch = 96
+  TextHeight = 13
+  object Shape1: TShape
+    Left = 0
+    Top = 0
+    Width = 538
+    Height = 491
+    Align = alClient
+    ExplicitLeft = 4
+    ExplicitTop = 392
+    ExplicitWidth = 98
+    ExplicitHeight = 99
+  end
+  object FOTO: TImage
+    Left = 0
+    Top = 0
+    Width = 538
+    Height = 491
+    Cursor = crHandPoint
+    Align = alClient
+    Proportional = True
+    Stretch = True
+    ExplicitLeft = 5
+    ExplicitTop = 394
+    ExplicitWidth = 96
+    ExplicitHeight = 97
+  end
+end

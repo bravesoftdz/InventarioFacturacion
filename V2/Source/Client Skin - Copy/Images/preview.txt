@@ -1,0 +1,27 @@
+          FACTURA F0000000030           
+ 
+Nombre   : CLIENTE DE CONTADO           
+Direccion: LA ROMANA                    
+Telefono : (809) 000-0000               
+----------------------------------------
+Cant   Descripcion     Precio   Total   
+----------------------------------------
+1   TEST - - ASDA SDA     12.1     12.1 
+----------------------------------------
+                 Total Neto:      $12.12
+                    ====================
+          Efectivo Recibido:      $12.12
+          Efectivo Devuelto:       $0.00
+ 
+ 
+ 
+____________________  __________________
+   Entregado Por          Recibido Por    
+>>> REVISE SU TICKET ANTES DE SALIR <<< 
+        GRACIAS POR PREFERIRNOS         
+ 
+ 
+ 
+ 
+ 
+ 
