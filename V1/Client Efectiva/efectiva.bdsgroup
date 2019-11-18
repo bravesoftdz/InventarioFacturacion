@@ -1,0 +1,20 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<BorlandProject>
+  <PersonalityInfo>
+    <Option>
+      <Option Name="Personality">Default.Personality</Option>
+      <Option Name="ProjectType"></Option>
+      <Option Name="Version">1.0</Option>
+      <Option Name="GUID">{8941C629-6189-4910-848F-E1F4088F2C10}</Option>
+    </Option>
+  </PersonalityInfo>
+  <Default.Personality>
+    
+    <Projects>
+      <Projects Name="Inventario_Cnt_SK.exe">Inventario_Cnt_SK.bdsproj</Projects>
+      <Projects Name="DataServer.exe">..\Server\DataServer.bdsproj</Projects>
+      <Projects Name="Targets">Inventario_Cnt_SK.exe DataServer.exe</Projects>
+    </Projects>
+    <Dependencies/>
+  </Default.Personality>
+</BorlandProject>

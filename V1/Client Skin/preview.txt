@@ -1,0 +1,41 @@
+              D'Karen Mobile              
+             La Super Tienda              
+                La Romana                 
+              Villa Hermosa               
+                 NCF : -                  
+     Facturas a Consumidores Finales      
+ 
+16/11/2010    8094234846      04:30 pm
+Condic.: Contado     Vence : 16/Nov/2010  
+           FACTURA F0000000033            
+ 
+Nombre   : CLIENTE DE CONTADO             
+Direccion: LA ROMANA                      
+Telefono : (809) 000-0000                 
+------------------------------------------
+Cant   Descripcion     Precio   Total     
+------------------------------------------
+1   CELULAR LG NEGRO C   200.0    200.0   
+         *** S E R I A L E S ***          
+        2                                 
+..........................................
+------------------------------------------
+                   Total Neto:      200.00
+                     =====================
+            Efectivo Recibido:      500.00
+            Efectivo Devuelto:      300.00
+ 
+ 
+ 
+ 
+ 
+____________________  ____________________
+   Entregado Por          Recibido Por    
+              GRACIAS !!!!!               
+            Le Atendi¢ : GUMBS            
+ 
+ 
+ 
+ 
+ 
+ 

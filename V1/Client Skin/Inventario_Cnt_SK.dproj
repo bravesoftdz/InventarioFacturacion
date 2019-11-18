@@ -1,0 +1,433 @@
+﻿	<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+		<PropertyGroup>
+			<ProjectGuid>{D0355387-2191-4901-8E5C-43D309808F65}</ProjectGuid>
+			<MainSource>Inventario_Cnt_SK.dpr</MainSource>
+			<Config Condition="'$(Config)'==''">Debug</Config>
+			<DCC_DCCCompiler>DCC32</DCC_DCCCompiler>
+			<ProjectVersion>12.0</ProjectVersion>
+		</PropertyGroup>
+		<PropertyGroup Condition="'$(Config)'=='Base' or '$(Base)'!=''">
+			<Base>true</Base>
+		</PropertyGroup>
+		<PropertyGroup Condition="'$(Config)'=='Release' or '$(Cfg_1)'!=''">
+			<Cfg_1>true</Cfg_1>
+			<CfgParent>Base</CfgParent>
+			<Base>true</Base>
+		</PropertyGroup>
+		<PropertyGroup Condition="'$(Config)'=='Debug' or '$(Cfg_2)'!=''">
+			<Cfg_2>true</Cfg_2>
+			<CfgParent>Base</CfgParent>
+			<Base>true</Base>
+		</PropertyGroup>
+		<PropertyGroup Condition="'$(Base)'!=''">
+			<DCC_ImageBase>00400000</DCC_ImageBase>
+			<DCC_UsePackage>vcl;rtl;vclx;indy;inet;xmlrtl;vclie;inetdbbde;inetdbxpress;dbrtl;dsnap;dsnapcon;vcldb;soaprtl;VclSmp;dbexpress;dbxcds;inetdb;bdertl;vcldbx;webdsnap;websnap;adortl;CLXIB;ibxpress;VCLIB;teeui;teedb;tee;dss;visualclx;visualdbclx;vclactnband;vclshlctrls;IntrawebDB_50_70;Intraweb_50_70;Rave50CLX;Rave50VCL;dclOffice2k;fc4000v7;ip4000clientvcl7;ip4000v7;rbTDBC77;rbDBDE77;rbDAD77;rbDIDE77;rbUSER77;rbRCL77;rbBDE77;rbIDE77;rbCIDE77;rbRIDE77;rbRAP77;MSAgent;XP_MENU;VCL_ZIP;qrpt</DCC_UsePackage>
+			<DebugSourcePath>C:\Development\Common\;C:\Applications\Borland\TMS component pack\;$(DebugSourcePath)</DebugSourcePath>
+			<DCC_UnitAlias>WinTypes=Windows;WinProcs=Windows;DbiTypes=BDE;DbiProcs=BDE;DbiErrs=BDE;$(DCC_UnitAlias)</DCC_UnitAlias>
+			<DCC_Platform>x86</DCC_Platform>
+			<DCC_DependencyCheckOutputName>Inventario_Cnt_SK.exe</DCC_DependencyCheckOutputName>
+			<DCC_K>false</DCC_K>
+			<DCC_N>true</DCC_N>
+			<DCC_S>false</DCC_S>
+			<DCC_SymbolReferenceInfo>1</DCC_SymbolReferenceInfo>
+			<DCC_E>false</DCC_E>
+			<DCC_F>false</DCC_F>
+		</PropertyGroup>
+		<PropertyGroup Condition="'$(Cfg_1)'!=''">
+			<DCC_LocalDebugSymbols>false</DCC_LocalDebugSymbols>
+			<DCC_Define>RELEASE;$(DCC_Define)</DCC_Define>
+			<DCC_SymbolReferenceInfo>0</DCC_SymbolReferenceInfo>
+			<DCC_DebugInformation>false</DCC_DebugInformation>
+		</PropertyGroup>
+		<PropertyGroup Condition="'$(Cfg_2)'!=''">
+			<DCC_Define>DEBUG;$(DCC_Define)</DCC_Define>
+		</PropertyGroup>
+		<ItemGroup>
+			<DelphiCompile Include="Inventario_Cnt_SK.dpr">
+				<MainSource>MainSource</MainSource>
+			</DelphiCompile>
+			<None Include="ModelSupport_Inventario_Cnt\default.txaPackage"/>
+			<None Include="ModelSupport_Inventario_Cnt_SK\default.txaPackage"/>
+			<None Include="FactComm.Cnt">
+				<ContainerId>File</ContainerId>
+			</None>
+			<DCCReference Include="MainForm.pas">
+				<Form>FMainMenu</Form>
+			</DCCReference>
+			<DCCReference Include="DataModulo.pas">
+				<Form>Modulo</Form>
+				<DesignClass>TDataModule</DesignClass>
+			</DCCReference>
+			<DCCReference Include="..\..\..\Common\ErrorHandle.pas">
+				<Form>ReconcileErrorForm</Form>
+			</DCCReference>
+			<DCCReference Include="Niveles.pas">
+				<Form>FNiveles</Form>
+			</DCCReference>
+			<DCCReference Include="Tipos_Productos.pas">
+				<Form>FTipos_Productos</Form>
+			</DCCReference>
+			<DCCReference Include="Venta_Caja.pas">
+				<Form>FVentas_Caja</Form>
+			</DCCReference>
+			<DCCReference Include="Status.pas">
+				<Form>FStatus</Form>
+			</DCCReference>
+			<DCCReference Include="Proveedores.pas">
+				<Form>FProveedores</Form>
+			</DCCReference>
+			<DCCReference Include="Departamentos.pas">
+				<Form>FDepartamentos</Form>
+			</DCCReference>
+			<DCCReference Include="Bancos.pas">
+				<Form>FBancos</Form>
+			</DCCReference>
+			<DCCReference Include="Distrbuir_Vencimiento.pas">
+				<Form>FVencimientos</Form>
+			</DCCReference>
+			<DCCReference Include="Productos.pas">
+				<Form>FProductos</Form>
+			</DCCReference>
+			<DCCReference Include="PrintLabels.pas">
+				<Form>FPrintLabels</Form>
+			</DCCReference>
+			<DCCReference Include="frmClientes.pas">
+				<Form>FrameClientes</Form>
+				<DesignClass>TFrame</DesignClass>
+			</DCCReference>
+			<DCCReference Include="DotmatrX.pas">
+				<Form>PreviewForm</Form>
+			</DCCReference>
+			<DCCReference Include="frmProveedores.pas">
+				<Form>FrameProveedores</Form>
+				<DesignClass>TFrame</DesignClass>
+			</DCCReference>
+			<DCCReference Include="..\..\..\Nomina\Source\Client\PayRollForms.pas">
+				<Form>PayRoll_Forms</Form>
+				<DesignClass>TDataModule</DesignClass>
+			</DCCReference>
+			<DCCReference Include="Formas_Pago.pas">
+				<Form>FMetodos</Form>
+			</DCCReference>
+			<DCCReference Include="Apertura_Caja.pas">
+				<Form>FApertura_Caja</Form>
+			</DCCReference>
+			<DCCReference Include="DetalledePagos.pas">
+				<Form>FDetallePagos</Form>
+			</DCCReference>
+			<DCCReference Include="Fabricantes.pas">
+				<Form>FFabricantes</Form>
+			</DCCReference>
+			<DCCReference Include="..\..\..\Nomina\Source\Client\DialogoDepartamento.pas">
+				<Form>FCriterioDepartamento</Form>
+			</DCCReference>
+			<DCCReference Include="Criterio_Etiquetas.pas">
+				<Form>FCriterio_Etiquetas</Form>
+			</DCCReference>
+			<DCCReference Include="Criterio_Rep_Facturas_NCF.pas">
+				<Form>FCriterio_Rep_Facturas_NCF</Form>
+			</DCCReference>
+			<DCCReference Include="PrintShow.pas">
+				<Form>FPrintShow</Form>
+			</DCCReference>
+			<DCCReference Include="..\..\..\Common\DlgFechas.pas">
+				<Form>DlgFecha</Form>
+			</DCCReference>
+			<DCCReference Include="PayRollConfigForm.pas">
+				<Form>FPayRollConfig</Form>
+			</DCCReference>
+			<DCCReference Include="Opciones.pas">
+				<Form>FOpciones</Form>
+			</DCCReference>
+			<DCCReference Include="User_Login.pas">
+				<Form>FUser_Login</Form>
+			</DCCReference>
+			<DCCReference Include="Retiros_Caja.pas">
+				<Form>FRetiros_Caja</Form>
+			</DCCReference>
+			<DCCReference Include="PagosCompras.pas">
+				<Form>FPago_Compra</Form>
+			</DCCReference>
+			<DCCReference Include="Categorias.pas">
+				<Form>FCategorias</Form>
+			</DCCReference>
+			<DCCReference Include="NotasCredito.pas">
+				<Form>FNotas_Credito</Form>
+			</DCCReference>
+			<DCCReference Include="DialogoDeptos.pas">
+				<Form>FCriterioRepProductos</Form>
+			</DCCReference>
+			<DCCReference Include="Ajuste_Inventario.pas">
+				<Form>FAjuste_Inventario</Form>
+			</DCCReference>
+			<DCCReference Include="PagosFacturas.pas">
+				<Form>FPago_Factura</Form>
+			</DCCReference>
+			<DCCReference Include="Importar.pas">
+				<Form>FImportar</Form>
+			</DCCReference>
+			<DCCReference Include="Establecer_Precios_Ventas.pas">
+				<Form>FPrecios_Venta</Form>
+			</DCCReference>
+			<DCCReference Include="Aplicar_Pago.pas">
+				<Form>FAplicar_Monto</Form>
+			</DCCReference>
+			<DCCReference Include="Vendedores.pas">
+				<Form>FVendedores</Form>
+			</DCCReference>
+			<DCCReference Include="Usuarios.pas">
+				<Form>FUsuarios</Form>
+			</DCCReference>
+			<DCCReference Include="Compra_Productos.pas">
+				<Form>FCompra_Productos</Form>
+			</DCCReference>
+			<DCCReference Include="Clientes.pas">
+				<Form>FClientes</Form>
+			</DCCReference>
+			<DCCReference Include="ConfigForm.pas">
+				<Form>FMainConfig</Form>
+			</DCCReference>
+			<DCCReference Include="Terminos.pas">
+				<Form>FTerminos</Form>
+			</DCCReference>
+			<DCCReference Include="..\..\..\Lib\Contabilidad_Client\Cuentas.pas">
+				<Form>FCuentas_Contables</Form>
+			</DCCReference>
+			<DCCReference Include="Salidas_Inventario.pas">
+				<Form>FSalidas_Inventario</Form>
+			</DCCReference>
+			<DCCReference Include="..\..\..\Lib\Contabilidad_Client\Transacciones.pas">
+				<Form>FTransacciones</Form>
+			</DCCReference>
+			<DCCReference Include="..\..\..\Lib\Contabilidad_Client\DataModuloContabilidad.pas">
+				<Form>ModuloContabilidad</Form>
+				<DesignClass>TDataModule</DesignClass>
+			</DCCReference>
+			<DCCReference Include="DialogoVendidas.pas">
+				<Form>FCriterioRepVendida</Form>
+			</DCCReference>
+			<DCCReference Include="Splash.pas">
+				<Form>FSplash</Form>
+			</DCCReference>
+			<DCCReference Include="..\..\..\Nomina\Source\Client\Anadir_Compania.pas">
+				<Form>FAnadirCompania</Form>
+			</DCCReference>
+			<DCCReference Include="..\..\..\Nomina\Source\Client\Aplicar_Horas.pas">
+				<Form>FAplicar_Horas</Form>
+			</DCCReference>
+			<DCCReference Include="..\..\..\Nomina\Source\Client\Companias.pas">
+				<Form>FCompanias</Form>
+			</DCCReference>
+			<DCCReference Include="..\..\..\Nomina\Source\Client\DataNomina.pas">
+				<Form>ModuloNomina</Form>
+				<DesignClass>TDataModule</DesignClass>
+			</DCCReference>
+			<DCCReference Include="..\..\..\Nomina\Source\Client\Deducciones.pas">
+				<Form>FDeducciones</Form>
+			</DCCReference>
+			<DCCReference Include="..\..\..\Nomina\Source\Client\Departamentos_Empleados.pas">
+				<Form>FDepartamentos_Nomina</Form>
+			</DCCReference>
+			<DCCReference Include="..\..\..\Nomina\Source\Client\Diario.pas">
+				<Form>FDiario</Form>
+			</DCCReference>
+			<DCCReference Include="..\..\..\Common\EditCiudades.pas">
+				<Form>FEditCiudades</Form>
+			</DCCReference>
+			<DCCReference Include="..\..\..\Common\EditSectores.pas">
+				<Form>FEditSectores</Form>
+			</DCCReference>
+			<DCCReference Include="..\..\..\Common\EditZonas.pas">
+				<Form>FEditZonas</Form>
+			</DCCReference>
+			<DCCReference Include="..\..\..\Nomina\Source\Client\Empleados.pas">
+				<Form>FEmpleados</Form>
+			</DCCReference>
+			<DCCReference Include="..\..\..\Nomina\Source\Client\Generar_Nomina.pas">
+				<Form>FNomina</Form>
+			</DCCReference>
+			<DCCReference Include="..\..\..\Nomina\Source\Client\Grupos_Nomina.pas">
+				<Form>FGrupos_Nomina</Form>
+			</DCCReference>
+			<DCCReference Include="..\..\..\Nomina\Source\Client\Pagos_Incentivos.pas">
+				<Form>FPagos_Incentivos</Form>
+			</DCCReference>
+			<DCCReference Include="..\..\..\Nomina\Source\Client\Regalia.pas">
+				<Form>FRegalia</Form>
+			</DCCReference>
+			<DCCReference Include="..\..\..\Nomina\Source\Client\Seleccionar_Detalles_Grupo.pas">
+				<Form>FSelect_Deducciones_Pagos</Form>
+			</DCCReference>
+			<DCCReference Include="..\..\..\Nomina\Source\Client\Tipo_Detalle_Grupo.pas">
+				<Form>FTipos_Detalles_Grupo</Form>
+			</DCCReference>
+			<DCCReference Include="..\..\..\Nomina\Source\Client\Ver_Detalles_Nomina.pas">
+				<Form>FDetalles_Nomina</Form>
+			</DCCReference>
+			<DCCReference Include="..\..\..\Lib\Contabilidad_Client\DialogoMayor.pas">
+				<Form>FCriterioLibroMayor</Form>
+			</DCCReference>
+			<DCCReference Include="..\..\..\Lib\Contabilidad_Client\Acc_Forms.pas">
+				<Form>AccountingForms</Form>
+				<DesignClass>TDataModule</DesignClass>
+			</DCCReference>
+			<DCCReference Include="Reports_Forms.pas">
+				<Form>ReportsAndForms</Form>
+				<DesignClass>TDataModule</DesignClass>
+			</DCCReference>
+			<DCCReference Include="CnfgForms.pas">
+				<Form>FConfigForms</Form>
+			</DCCReference>
+			<DCCReference Include="Criterio_Vencimientos.pas">
+				<Form>FCriterio_Vencimientos</Form>
+			</DCCReference>
+			<DCCReference Include="DlgFinanciamientos.pas">
+				<Form>FormFinanciamientos</Form>
+			</DCCReference>
+			<DCCReference Include="ResumenFacturas.pas">
+				<Form>FResumenFacturas</Form>
+			</DCCReference>
+			<DCCReference Include="Criterio_Rep_Facturas.pas">
+				<Form>FCriterio_Rep_Facturas</Form>
+			</DCCReference>
+			<DCCReference Include="..\..\..\Common\Autorizar.pas">
+				<Form>FAutorizar</Form>
+			</DCCReference>
+			<DCCReference Include="..\..\..\Common\TimerMessage.pas">
+				<Form>FTimerMessage</Form>
+			</DCCReference>
+			<DCCReference Include="AccountConfigForm.pas">
+				<Form>FAccountConfig</Form>
+			</DCCReference>
+			<DCCReference Include="RegKeys.pas"/>
+			<DCCReference Include="..\..\..\Common\Generales.pas">
+				<Form>ModuloGenerales</Form>
+				<DesignClass>TDataModule</DesignClass>
+			</DCCReference>
+			<DCCReference Include="..\..\..\Common\Utilidades.Pas"/>
+			<DCCReference Include="..\..\..\Common\DisplayMessage.pas">
+				<Form>FDisplayMessage</Form>
+			</DCCReference>
+			<DCCReference Include="Denominaciones_Monedas.pas">
+				<Form>FDenominaciones</Form>
+			</DCCReference>
+			<DCCReference Include="Facturas_Seriales.pas">
+				<Form>FFacturas_Seriales</Form>
+			</DCCReference>
+			<DCCReference Include="Componentes.pas">
+				<Form>FComponentes</Form>
+			</DCCReference>
+			<DCCReference Include="..\..\..\Common\Paises.pas">
+				<Form>FPaises</Form>
+			</DCCReference>
+			<DCCReference Include="..\..\..\Common\ESBDates.pas"/>
+			<DCCReference Include="CancelarCtasCobrar.pas">
+				<Form>FCancel_Ctas_Cobrar</Form>
+			</DCCReference>
+			<DCCReference Include="..\..\..\Common\SkinGraphic.pas"/>
+			<DCCReference Include="NotasDebito.pas">
+				<Form>FNotas_Debito</Form>
+			</DCCReference>
+			<DCCReference Include="CtasCobrar.pas">
+				<Form>FCtas_Cobrar</Form>
+			</DCCReference>
+			<DCCReference Include="Productos_Similares.pas">
+				<Form>FProductos_Similares</Form>
+			</DCCReference>
+			<DCCReference Include="Seriales_Productos_Facturados.pas">
+				<Form>FSeriales_Productos_Facturados</Form>
+			</DCCReference>
+			<DCCReference Include="Compras_Seriales.pas">
+				<Form>FCompras_Seriales</Form>
+			</DCCReference>
+			<DCCReference Include="Seriales_Productos.pas">
+				<Form>FSeriales_Productos</Form>
+			</DCCReference>
+			<DCCReference Include="Orden_Compra_Productos.pas">
+				<Form>FOrden_Compra_Productos</Form>
+			</DCCReference>
+			<DCCReference Include="Facturacion.pas">
+				<Form>FFacturacion</Form>
+			</DCCReference>
+			<DCCReference Include="Seriales_Productos_Despachados.pas">
+				<Form>FSeriales_Productos_Despachados</Form>
+			</DCCReference>
+			<DCCReference Include="Existencia_Productos.pas">
+				<Form>FExistencia_Inicial</Form>
+			</DCCReference>
+			<DCCReference Include="..\..\..\Common\SrchDlg.pas">
+				<Form>DlgSearch</Form>
+			</DCCReference>
+			<DCCReference Include="opMisc_Productos.pas">
+				<Form>FOpciones_Misc_Productos</Form>
+			</DCCReference>
+			<DCCReference Include="Modificar_Precio.pas">
+				<Form>FModificar_Precio</Form>
+			</DCCReference>
+			<DCCReference Include="Cuadre_Caja.pas">
+				<Form>FCuadre_Caja</Form>
+			</DCCReference>
+			<DCCReference Include="Terminales.pas">
+				<Form>FTerminales</Form>
+			</DCCReference>
+			<BuildConfiguration Include="Base">
+				<Key>Base</Key>
+			</BuildConfiguration>
+			<BuildConfiguration Include="Debug">
+				<Key>Cfg_2</Key>
+				<CfgParent>Base</CfgParent>
+			</BuildConfiguration>
+			<BuildConfiguration Include="Release">
+				<Key>Cfg_1</Key>
+				<CfgParent>Base</CfgParent>
+			</BuildConfiguration>
+		</ItemGroup>
+		<Import Project="$(BDS)\Bin\CodeGear.Delphi.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Delphi.Targets')"/>
+		<ProjectExtensions>
+			<Borland.Personality>Delphi.Personality.12</Borland.Personality>
+			<Borland.ProjectType>VCLApplication</Borland.ProjectType>
+			<BorlandProject>
+				<Delphi.Personality>
+					<Source>
+						<Source Name="MainSource">Inventario_Cnt_SK.dpr</Source>
+					</Source>
+					<Parameters>
+						<Parameters Name="UseLauncher">False</Parameters>
+						<Parameters Name="LoadAllSymbols">True</Parameters>
+						<Parameters Name="LoadUnspecifiedSymbols">False</Parameters>
+					</Parameters>
+					<Language>
+						<Language Name="RootDir">..\..\..\..\Development\3t-Inventory And Sales\Source\Client Skin\</Language>
+					</Language>
+					<VersionInfo>
+						<VersionInfo Name="IncludeVerInfo">False</VersionInfo>
+						<VersionInfo Name="AutoIncBuild">False</VersionInfo>
+						<VersionInfo Name="MajorVer">1</VersionInfo>
+						<VersionInfo Name="MinorVer">0</VersionInfo>
+						<VersionInfo Name="Release">0</VersionInfo>
+						<VersionInfo Name="Build">0</VersionInfo>
+						<VersionInfo Name="Debug">False</VersionInfo>
+						<VersionInfo Name="PreRelease">False</VersionInfo>
+						<VersionInfo Name="Special">False</VersionInfo>
+						<VersionInfo Name="Private">False</VersionInfo>
+						<VersionInfo Name="DLL">False</VersionInfo>
+						<VersionInfo Name="Locale">1033</VersionInfo>
+						<VersionInfo Name="CodePage">1252</VersionInfo>
+					</VersionInfo>
+					<VersionInfoKeys>
+						<VersionInfoKeys Name="CompanyName"/>
+						<VersionInfoKeys Name="FileDescription"/>
+						<VersionInfoKeys Name="FileVersion">1.0.0.0</VersionInfoKeys>
+						<VersionInfoKeys Name="InternalName"/>
+						<VersionInfoKeys Name="LegalCopyright"/>
+						<VersionInfoKeys Name="LegalTrademarks"/>
+						<VersionInfoKeys Name="OriginalFilename"/>
+						<VersionInfoKeys Name="ProductName"/>
+						<VersionInfoKeys Name="ProductVersion">1.0.0.0</VersionInfoKeys>
+						<VersionInfoKeys Name="Comments"/>
+					</VersionInfoKeys>
+				</Delphi.Personality>
+			</BorlandProject>
+			<ProjectFileVersion>12</ProjectFileVersion>
+		</ProjectExtensions>
+	</Project>

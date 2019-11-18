@@ -1,0 +1,32 @@
+            Nombre Compa¤¡a             
+        Eugenia A. Miranda #24-A        
+29/06/2006   890-556-2795     04:58 pm
+Condic.: Contado    Vence : 29/Jun/2006 
+              0-0000000-0               
+          FACTURA F0000000002            
+Nombre   : CLIENTE DE CONTADO           
+Direccion: LA ROMANA                    
+Telefono : (809) 000-0000               
+----------------------------------------
+Cant   Descripcion     Precio   Total   
+----------------------------------------
+5   BRASIER DE VARILLA    45.5    227.5 
+----------------------------------------
+                 Total Neto:     $227.50
+                    ====================
+          Efectivo Recibido:     $227.50
+          Efectivo Devuelto:       $0.00
+ 
+ 
+ 
+____________________  __________________
+   Entregado Por          Recibido Por    
+>>> REVISE SU TICKET ANTES DE SALIR <<< 
+        GRACIAS POR PREFERIRNOS         
+           Le Atendi¢ : GUMBS           
+ 
+ 
+ 
+ 
+ 
+ 
