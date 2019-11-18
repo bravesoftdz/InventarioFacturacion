@@ -1,0 +1,59 @@
+object FSplash: TFSplash
+  Left = 0
+  Top = 0
+  BorderStyle = bsNone
+  Caption = 'Splash'
+  ClientHeight = 81
+  ClientWidth = 236
+  Color = clBtnFace
+  Font.Charset = DEFAULT_CHARSET
+  Font.Color = clWindowText
+  Font.Height = -11
+  Font.Name = 'Tahoma'
+  Font.Style = []
+  OldCreateOrder = False
+  Position = poScreenCenter
+  OnCreate = FormCreate
+  PixelsPerInch = 96
+  TextHeight = 13
+  object Shader1: TShader
+    Left = 0
+    Top = 0
+    Width = 236
+    Height = 81
+    Align = alClient
+    Font.Charset = DEFAULT_CHARSET
+    Font.Color = clMenuHighlight
+    Font.Height = -11
+    Font.Name = 'Tahoma'
+    Font.Style = []
+    ParentFont = False
+    TabOrder = 1
+    FromColor = 15395562
+    ToColor = clSilver
+    Direction = False
+    Version = '1.4.0.0'
+    object Label1: TLabel
+      Left = 14
+      Top = 8
+      Width = 209
+      Height = 37
+      Caption = 'inicializando'
+      Font.Charset = ANSI_CHARSET
+      Font.Color = clSilver
+      Font.Height = -32
+      Font.Name = 'Arial Rounded MT Bold'
+      Font.Style = [fsBold]
+      ParentFont = False
+      Transparent = True
+    end
+  end
+  object Animate1: TAnimate
+    Left = 36
+    Top = 50
+    Width = 165
+    Height = 23
+    FileName = 'Images\loading.avi'
+    StopFrame = 29
+  end
+end

@@ -1,0 +1,15 @@
+[Busqueda]
+Proceso=25;;Proceso;;F
+Numero=10;;Numero;;F
+Fecha=10;;Fecha;;F
+Hora=10;;Hora;;F
+Concepto=1000;;Concepto;;F
+Empleado=25;;Empleado;;F
+Monto=13;;Monto;;F
+Pagado=13;;Pagado;;F
+Pendiente=13;;Pendiente;;F
+Status=15;;Status;;F
+Factura=25;;Factura;;F
+Cotizacion=25;;Cotizacion;;F
+Referencia=25;;Referencia;;F
+Cliente=25;;Cliente;;F

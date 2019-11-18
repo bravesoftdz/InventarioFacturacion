@@ -1,0 +1,1 @@
+<?xml version="1.0" standalone="yes"?>  <DATAPACKET Version="2.0"><METADATA><FIELDS><FIELD attrname="Descripcion" fieldtype="string" WIDTH="150"/><FIELD attrname="Visible" fieldtype="boolean"/><FIELD attrname="Direccion" fieldtype="string" WIDTH="250"/></FIELDS><PARAMS/></METADATA><ROWDATA></ROWDATA></DATAPACKET>
